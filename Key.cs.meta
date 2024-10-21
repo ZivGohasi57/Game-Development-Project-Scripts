@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 6c491719d8b8948dc833eed76e8dff31
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - linkedDoor: {instanceID: 0}
+  - interactionText: {instanceID: 0}
+  - chestAnimator: {instanceID: 0}
+  - playerAnimator: {instanceID: 0}
+  - openChestSound: {fileID: 8300000, guid: adfb477aa2d8f44f1a8f3ffc61b6ccd5, type: 3}
+  - takeKeySound: {fileID: 8300000, guid: 7a1020cbdad2a4479a461a0dd31e3a84, type: 3}
+  - takeGoldSound: {fileID: 8300000, guid: 242b418d48a3e41a6ab36e37f9ced887, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
