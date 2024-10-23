@@ -21,7 +21,7 @@ public class Door : MonoBehaviour
     public AudioClip openDoorSound;    // סאונד לפתיחת הדלת
     private AudioSource audioSource;    // מקור הסאונד
 
-    private bool isUnlocked = false;  // האם הדלת פתוחה
+    public bool isUnlocked = false;  // האם הדלת פתוחה
     private bool isInRange = false;  // האם השחקן ליד הדלת
     private string doorId;  // מזהה ייחודי לדלת
 

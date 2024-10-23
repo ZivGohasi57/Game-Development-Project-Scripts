@@ -7,10 +7,12 @@ public class PersistentObjectManager : MonoBehaviour
 
     public bool hasSwordInHand = false;
     public bool hasSwordOnWall = true;
-    public bool hasWeaponInHand = false; // משתנה חדש לתיאור נשק שאינו חרב
-    public int weaponType = -1; // נשמר את סוג הנשק (0 - None, 1 - Sword, 2 - Axe, וכו')
+    public bool hasWeaponInHand = false;
+    public int weaponType = -1; 
+    
+    public float playerHP = 100f;  // שמירת HP של השחקן
+    public HPManager hpManager;    // רפרנס ל-HPManager שאחראי על עדכון הקנבס
 
-    // אוספים לשמירת מצבי פריטים, דלתות ומיכלים שנפתחו
     private HashSet<string> collectedItems = new HashSet<string>();  
     private HashSet<string> openDoors = new HashSet<string>();  
     private HashSet<string> openedContainers = new HashSet<string>();  
@@ -20,12 +22,38 @@ public class PersistentObjectManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject);  // שמירת האובייקט בין סצנות
+            DontDestroyOnLoad(gameObject);  // שומר את האובייקט הזה בין סצנות
         }
         else
         {
-            Destroy(gameObject);  // הריסת עותק נוסף אם קיים
+            Destroy(gameObject);  // הורסת עותקים כפולים אם יש
         }
+    }
+
+    // פונקציה לעדכון HP דרך ה-HPManager
+    public void UpdatePlayerHPUI()
+    {
+        if (hpManager != null)
+        {
+            hpManager.SetHP(playerHP);  // עדכון ה-UI עם ה-HP הנוכחי של השחקן
+        }
+    }
+
+    // עדכון HP של השחקן
+    public void SetPlayerHP(float hp)
+    {
+        playerHP = hp;
+
+        // עדכון ה-HP ב-HPManager
+        if (hpManager != null)
+        {
+            hpManager.SetHP(playerHP);  // שים לב לשימוש ב-SetHP כדי לעדכן את ה-UI עם הערך החדש
+        }
+    }
+
+    public float GetPlayerHP()
+    {
+        return playerHP;
     }
 
     // ניהול מצב החרב

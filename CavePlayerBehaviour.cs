@@ -16,6 +16,10 @@ public class CavePlayerBehaviour : MonoBehaviour
     public AudioClip footStepsClip;
     public AudioSource footStepsAudioSource;
 
+    public LayerMask enemyLayer;  // שכבת האויבים
+    public List<Collider> attackColliders; // רשימה של קוליידרים עבור התקפות שונות
+    public float attackDamage = 10f/3f; // כמות הנזק שהשחקן נותן
+
     CharacterController controller;
     float speed = 10f;
     float runSpeed = 20f;
@@ -33,6 +37,15 @@ public class CavePlayerBehaviour : MonoBehaviour
     private Vector3 cameraVelocity = Vector3.zero;
 
     private GameObject currentJar;  // לשמירת הכד בטווח
+    private GameObject currentEnemy;  // לשמירת האויב בטווח
+	public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
+    public float currentHP;          // כמות ה-HP הנוכחית של השחקן
+    public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן	
+
+
+    void Awake()
+    {
+	}
 
     void Start()
     {
@@ -59,7 +72,12 @@ public class CavePlayerBehaviour : MonoBehaviour
             sword.SetActive(PersistentObjectManager.instance.hasSwordOnWall);
             animator.SetInteger("WeaponType", PersistentObjectManager.instance.weaponType); // טען את סוג הנשק
         }
+
+        DisableAllAttackColliders(); // לוודא שכל הקוליידרים כבויים בהתחלה
+	currentHP = maxHP;           // מתחילים עם כמות החיים המקסימלית
+        UpdateHPUI();                // עדכון ה-UI בתחילת המשחק
     }
+    
 
     void Update()
     {
@@ -109,7 +127,7 @@ public class CavePlayerBehaviour : MonoBehaviour
             ExitCombatMode();
         }
 
-        if (isInCombatMode && (weaponType == 0 || weaponType == 1))
+        if (isInCombatMode && (weaponType == 1 || weaponType == 0)) // לחימה עם חרב או נשק רגיל
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -160,10 +178,12 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         Debug.Log("Single Attack");
         animator.SetTrigger("SingleAttack");
+        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
 
-        if (currentJar != null)
+        // נבדוק אם יש אויב בטווח
+        if (currentEnemy != null)
         {
-            ReplaceWithBrokenJar(currentJar);
+            AttackEnemy(currentEnemy);
         }
     }
 
@@ -171,35 +191,46 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         Debug.Log("Combo Attack");
         animator.SetTrigger("ComboAttack");
+        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
 
-        if (currentJar != null)
+        // נבדוק אם יש אויב בטווח
+        if (currentEnemy != null)
         {
-            ReplaceWithBrokenJar(currentJar);
+            AttackEnemy(currentEnemy);
         }
     }
 
-    void ReplaceWithBrokenJar(GameObject jar)
+    IEnumerator ActivateAttackColliders()
     {
-        Jar jarScript = jar.GetComponent<Jar>();
-        if (jarScript != null)
+        EnableAllAttackColliders(); // הפעלת כל הקוליידרים
+        yield return new WaitForSeconds(0.5f); // זמן המכה
+        DisableAllAttackColliders(); // כיבוי הקוליידרים לאחר המכה
+    }
+
+    void EnableAllAttackColliders()
+    {
+        foreach (var collider in attackColliders)
         {
-            jarScript.Break();  // הפעלת הפונקציה לשבירת הכד
+            collider.enabled = true; // הפעלת כל הקוליידרים
         }
     }
 
-    void OnTriggerEnter(Collider other)
+    void DisableAllAttackColliders()
     {
-        if (other.CompareTag("Jar"))
+        foreach (var collider in attackColliders)
         {
-            currentJar = other.gameObject;
+            collider.enabled = false; // כיבוי כל הקוליידרים
         }
     }
 
-    void OnTriggerExit(Collider other)
+    void AttackEnemy(GameObject enemy)
     {
-        if (other.CompareTag("Jar"))
+        // נניח שהאויב שלך משתמש בסקריפט שנקרא 'Enemy' ויש לו פונקציה 'TakeDamage'
+        Enemy enemyScript = enemy.GetComponent<Enemy>();
+        if (enemyScript != null)
         {
-            currentJar = null;
+            enemyScript.TakeDamage(attackDamage);  // לדוגמה, הורדת 20 נקודות חיים
+            Debug.Log("פגעת באויב!");
         }
     }
 
@@ -208,26 +239,26 @@ public class CavePlayerBehaviour : MonoBehaviour
         float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : speed;
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
-    
+
         Vector3 direction = new Vector3(horizontal, 0, vertical).normalized;
-    
+
         if (controller.isGrounded)
         {
             if (direction.magnitude >= 0.1f)
             {
                 float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + currentYaw;
                 Quaternion targetRotation = Quaternion.Euler(0, targetAngle, 0);
-    
+
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10);
-    
+
                 Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
                 moveDirection *= currentSpeed;
-    
+
                 moveDirection.y = -5f;
-    
+
                 controller.Move(moveDirection * Time.deltaTime);
                 UpdateAnimation(direction.magnitude, Input.GetKey(KeyCode.LeftShift));
-    
+
                 // עדכון Pitch של הסאונד בהתאם למצב ריצה או הליכה
                 if (Input.GetKey(KeyCode.LeftShift)) // אם השחקן רץ
                 {
@@ -237,7 +268,7 @@ public class CavePlayerBehaviour : MonoBehaviour
                 {
                     footStepsAudioSource.pitch = 1.0f; // מהירות סאונד רגילה בהליכה
                 }
-    
+
                 // הפעל את סאונד הצעדים אם הוא לא כבר מתנגן
                 if (!footStepsAudioSource.isPlaying)
                 {
@@ -259,8 +290,6 @@ public class CavePlayerBehaviour : MonoBehaviour
             Vector3 gravity = new Vector3(0, -20f, 0);
             controller.Move(gravity * Time.deltaTime);
         }
-    
-        // פונקציה לשמירת סאונד הצעדים הוסרה מכאן, נשארה בתוך התנאי.
     }
 
     void UpdateAnimation(float movementMagnitude, bool isRunning)
@@ -269,28 +298,9 @@ public class CavePlayerBehaviour : MonoBehaviour
         animator.SetBool("isRunning", isRunning);
     }
 
-    void PlayFootSteps(float dx, float dz)
-    {
-        if (!(Mathf.Abs(dx) < 0.01f && Mathf.Abs(dz) < 0.01f))
-        {
-            if (!footStepsAudioSource.isPlaying)
-            {
-                footStepsAudioSource.Play();
-            }
-        }
-        else
-        {
-            if (footStepsAudioSource.isPlaying)
-            {
-                footStepsAudioSource.Stop();
-            }
-        }
-    }
-
     void HandleInteraction()
     {
         HandleSwordInteraction();
-        // הוצא את HandleChestInteraction מכאן
     }
 
     void HandleSwordInteraction()
@@ -369,5 +379,73 @@ public class CavePlayerBehaviour : MonoBehaviour
             animator.SetInteger("WeaponType", 1);
             Debug.Log("WeaponType set to 1, sword equipped.");
         }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Enemy"))  // נניח שלכל האויבים יש תגית "Enemy"
+        {
+            currentEnemy = other.gameObject;
+        }
+        else if (other.CompareTag("Jar"))
+        {
+            currentJar = other.gameObject;
+        }
+        else if (other.CompareTag("EnemyAttack"))  // בדוק אם הפגיעה באה מהאויב
+        {
+            Enemy enemy = other.GetComponentInParent<Enemy>();
+            if (enemy != null)
+            {
+                TakeDamage(enemy.attackDamage);  // השחקן מקבל נזק מהאויב בהתאם לכמות הנזק של האויב
+                Debug.Log("השחקן נפגע! חיים נוכחיים: " + currentHP);
+            }
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            currentEnemy = null;  // האויב יצא מהטווח
+        }
+        else if (other.CompareTag("Jar"))
+        {
+            currentJar = null;
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        Debug.Log($"נגרם נזק: {damage}, חיים נוכחיים: {currentHP}");  // הצגת נזק וחיים נוכחיים
+    
+        currentHP -= damage;  // הפחתת כמות החיים בהתאם לנזק
+        if (currentHP < 0)
+        {
+            currentHP = 0;
+        }
+        
+        // עדכון ה-HP של השחקן ב-PersistentObjectManager
+        PersistentObjectManager.instance.SetPlayerHP(currentHP);
+    
+        UpdateHPUI();  // Make sure the health slider is updated after taking damage
+        
+        if (currentHP == 0)
+        {
+            Die();  // קריאה לפונקציית המוות אם ה-HP הגיע ל-0
+        }
+    }
+
+	void UpdateHPUI()
+    {
+        if (hpSlider != null)
+        {
+            hpSlider.value = currentHP / maxHP;  // עדכון ערך הסליידר ב-UI
+        }
+    }
+
+    void Die()
+    {
+        Debug.Log("הדמות מתה!");   // ניתן להוסיף כאן לוגיקה למוות של הדמות
+        // לדוגמה, להציג מסך "Game Over"
     }
 }
