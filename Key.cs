@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class Key : MonoBehaviour
 {
-    public enum ItemType { Key, Gold, Weapon }
+    public enum ItemType { Key, Gold, Weapon, Life }  // הוספת Life
     public enum WeaponType { None, Sword, Axe, Bow }
     public enum ContainerType { Chest, Jar }
 
@@ -19,16 +19,20 @@ public class Key : MonoBehaviour
     public string messageTakeKey = "Press E to take the key";
     public string messageTakeGold = "Press E to take the gold";
     public string messageTakeWeapon = "Press E to take the weapon";
+    public string messageTakeLife = "Press E to take the life boost";  // הודעה עבור life
 
     public int goldAmount = 10;
+    public int lifeBoostAmount = 30;  // כמות החיים שהשחקן יקבל
     public Animator chestAnimator;
     public Animator playerAnimator;
 
     // משתני סאונד
-    public AudioClip takeKeySound;      // סאונד ללקיחת מפתח
-    public AudioClip takeGoldSound;     // סאונד ללקיחת זהב
-    public AudioClip openChestSound;    // סאונד לפתיחת תיבה
-    private AudioSource audioSource;     // מקור הסאונד
+    public AudioClip takeKeySound;
+    public AudioClip takeGoldSound;
+    public AudioClip takeWeaponSound;
+    public AudioClip takeLifeSound;  // סאונד ללקיחת life
+    public AudioClip openChestSound;
+    private AudioSource audioSource;
 
     private bool isInRange = false;
     private bool chestOpened = false;
@@ -39,7 +43,6 @@ public class Key : MonoBehaviour
     {
         generatedItemId = $"{gameObject.name}_{transform.position}";
 
-        // קבלת רכיב AudioSource מההורה
         audioSource = transform.parent.GetComponent<AudioSource>();
 
         // בדיקה אם התיבה כבר נפתחה
@@ -118,6 +121,7 @@ public class Key : MonoBehaviour
             ItemType.Key => messageTakeKey,
             ItemType.Gold => messageTakeGold,
             ItemType.Weapon => messageTakeWeapon,
+            ItemType.Life => messageTakeLife,  // הודעה עבור life
             _ => ""
         };
     }
@@ -155,7 +159,6 @@ public class Key : MonoBehaviour
                     linkedDoor.hasKey = true;
                     Debug.Log("המפתח נאסף! הדלת עודכנה.");
     
-                    // השמעת סאונד ללקיחת מפתח דרך ההורה
                     if (audioSource != null && takeKeySound != null)
                     {
                         audioSource.PlayOneShot(takeKeySound);
@@ -167,7 +170,6 @@ public class Key : MonoBehaviour
                 GoldManager.Instance.AddGold(goldAmount);
                 Debug.Log($"אספת {goldAmount} זהב!");
     
-                // השמעת סאונד ללקיחת זהב דרך ההורה
                 if (audioSource != null && takeGoldSound != null)
                 {
                     audioSource.PlayOneShot(takeGoldSound);
@@ -182,12 +184,10 @@ public class Key : MonoBehaviour
                     playerAnimator.SetInteger("WeaponType", (int)weaponType);
                 }
     
-                // עדכון ה- PersistentObjectManager עם סוג הנשק הנוכחי
                 if (PersistentObjectManager.instance != null)
                 {
                     PersistentObjectManager.instance.SetWeaponType((int)weaponType);
                     
-                    // כאן אנו מוסיפים את התנאים ללחצנים
                     if (weaponType == WeaponType.Sword)
                     {
                         PersistentObjectManager.instance.hasSwordInHand = true;
@@ -199,11 +199,31 @@ public class Key : MonoBehaviour
 
                     Debug.Log($"PersistentObjectManager: weaponType עודכן לערך {weaponType}");
                 }
+
+                if (audioSource != null && takeWeaponSound != null)
+                {
+                    audioSource.PlayOneShot(takeWeaponSound);
+                }
+                break;
+
+            case ItemType.Life:
+                if (PersistentObjectManager.instance != null)
+                {
+                    PersistentObjectManager.instance.SetPlayerHP(
+                        Mathf.Min(PersistentObjectManager.instance.GetPlayerHP() + lifeBoostAmount, 100f)); // מגבלת HP ל-100
+                    PersistentObjectManager.instance.UpdatePlayerHPUI();
+                    Debug.Log($"אספת life ונוספו {lifeBoostAmount} חיים!");
+                }
+    
+                if (audioSource != null && takeLifeSound != null)
+                {
+                    audioSource.PlayOneShot(takeLifeSound);
+                }
                 break;
         }
 
         interactionText.gameObject.SetActive(false);
-        gameObject.SetActive(false);  // החזרת המפתח למצב פעיל
+        gameObject.SetActive(false);  // הפיכת המפתח ללא זמין
         PersistentObjectManager.instance?.CollectItem(generatedItemId);
         Debug.Log($"הפריט {generatedItemId} נוסף לרשימת הפריטים שנאספו.");
     }

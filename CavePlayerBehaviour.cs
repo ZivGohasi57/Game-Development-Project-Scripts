@@ -18,7 +18,7 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     public LayerMask enemyLayer;  // שכבת האויבים
     public List<Collider> attackColliders; // רשימה של קוליידרים עבור התקפות שונות
-    public float attackDamage = 10f/3f; // כמות הנזק שהשחקן נותן
+    public float attackDamage = 0; // כמות הנזק שהשחקן נותן
 
     CharacterController controller;
     float speed = 10f;
@@ -41,7 +41,9 @@ public class CavePlayerBehaviour : MonoBehaviour
 	public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
     public float currentHP;          // כמות ה-HP הנוכחית של השחקן
     public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן	
-
+	
+	private int weaponType; // סוג הנשק, 0 - נשק רגיל, 1 - חרב
+    private float damage;  // משתנה לכמות הנזק
 
     void Awake()
     {
@@ -71,10 +73,11 @@ public class CavePlayerBehaviour : MonoBehaviour
             sword_in_hand.SetActive(PersistentObjectManager.instance.hasSwordInHand);
             sword.SetActive(PersistentObjectManager.instance.hasSwordOnWall);
             animator.SetInteger("WeaponType", PersistentObjectManager.instance.weaponType); // טען את סוג הנשק
+			weaponType = 1;
         }
-
+		UpdateDamageBasedOnWeapon();
         DisableAllAttackColliders(); // לוודא שכל הקוליידרים כבויים בהתחלה
-	currentHP = maxHP;           // מתחילים עם כמות החיים המקסימלית
+		currentHP = maxHP;           // מתחילים עם כמות החיים המקסימלית
         UpdateHPUI();                // עדכון ה-UI בתחילת המשחק
     }
     
@@ -84,7 +87,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         HandleMovement();
         HandleInteraction();
         HandleCombat();
-        HandleWeaponChange(); // הוספת הפונקציה לשינוי סוג הנשק
+        //HandleWeaponChange(); // הוספת הפונקציה לשינוי סוג הנשק
     }
 
     void LateUpdate()
@@ -126,7 +129,6 @@ public class CavePlayerBehaviour : MonoBehaviour
         {
             ExitCombatMode();
         }
-
         if (isInCombatMode && (weaponType == 1 || weaponType == 0)) // לחימה עם חרב או נשק רגיל
         {
             if (Input.GetMouseButtonDown(0))
@@ -183,7 +185,8 @@ public class CavePlayerBehaviour : MonoBehaviour
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy);
+			UpdateDamageBasedOnWeapon();
+            AttackEnemy(currentEnemy, damage);
         }
     }
 
@@ -196,7 +199,8 @@ public class CavePlayerBehaviour : MonoBehaviour
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy);
+			UpdateDamageBasedOnWeapon();		
+            AttackEnemy(currentEnemy, damage);
         }
     }
 
@@ -223,13 +227,13 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
     }
 
-    void AttackEnemy(GameObject enemy)
+    void AttackEnemy(GameObject enemy, float damage)
     {
         // נניח שהאויב שלך משתמש בסקריפט שנקרא 'Enemy' ויש לו פונקציה 'TakeDamage'
         Enemy enemyScript = enemy.GetComponent<Enemy>();
         if (enemyScript != null)
         {
-            enemyScript.TakeDamage(attackDamage);  // לדוגמה, הורדת 20 נקודות חיים
+            enemyScript.TakeDamage(damage);  // לדוגמה, הורדת 20 נקודות חיים
             Debug.Log("פגעת באויב!");
         }
     }
@@ -447,5 +451,19 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         Debug.Log("הדמות מתה!");   // ניתן להוסיף כאן לוגיקה למוות של הדמות
         // לדוגמה, להציג מסך "Game Over"
+    }
+
+	void UpdateDamageBasedOnWeapon()
+    {
+        // עדכון הנזק בהתאם לסוג הנשק
+        if (weaponType == 0) // נשק רגיל
+        {
+            attackDamage = 20;
+        }
+        else if (weaponType == 1) // חרב
+        {
+            attackDamage = 70;
+        }
+        Debug.Log($"Updated damage: {attackDamage}, weaponType: {weaponType}");
     }
 }
