@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; // לשימוש במעבר בין סצנות
+
 
 public class CavePlayerBehaviour : MonoBehaviour
 {
@@ -44,6 +46,11 @@ public class CavePlayerBehaviour : MonoBehaviour
 	
 	private int weaponType; // סוג הנשק, 0 - נשק רגיל, 1 - חרב
     private float damage;  // משתנה לכמות הנזק
+    public Image fadeImage;  // Image במקום CanvasGroup עבור אפקט fade
+    public float fadeDuration = 1f;  // משך זמן ה-fade
+
+
+    private string currentSceneName = "CaveScene";     // שם הסצנה הנוכחית
 
     void Awake()
     {
@@ -51,6 +58,8 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     void Start()
     {
+        PersistentObjectManager.instance.SetLastScene(currentSceneName);
+
         controller = GetComponent<CharacterController>();
 
         if (footStepsAudioSource == null)
@@ -87,7 +96,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         HandleMovement();
         HandleInteraction();
         HandleCombat();
-        //HandleWeaponChange(); // הוספת הפונקציה לשינוי סוג הנשק
+        //HandleWeaponChange();  הוספת הפונקציה לשינוי סוג הנשק
     }
 
     void LateUpdate()
@@ -181,6 +190,15 @@ public class CavePlayerBehaviour : MonoBehaviour
         Debug.Log("Single Attack");
         animator.SetTrigger("SingleAttack");
         StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
+		
+		if (currentJar != null) 
+		{ 
+            Jar jarScript = currentJar.GetComponent<Jar>(); // בדיקה אם יש חבית בטווח
+            if (jarScript != null)
+            {
+                jarScript.Break(); // קריאה לפונקציית השבירה של החבית
+            }
+		}
 
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
@@ -195,6 +213,14 @@ public class CavePlayerBehaviour : MonoBehaviour
         Debug.Log("Combo Attack");
         animator.SetTrigger("ComboAttack");
         StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
+		if (currentJar != null) 
+		{ 
+			Jar jarScript = currentJar.GetComponent<Jar>(); // בדיקה אם יש חבית בטווח
+            if (jarScript != null)
+            {
+                jarScript.Break(); // קריאה לפונקציית השבירה של החבית
+            }
+		}
 
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
@@ -427,16 +453,31 @@ public class CavePlayerBehaviour : MonoBehaviour
         {
             currentHP = 0;
         }
-        
+    
         // עדכון ה-HP של השחקן ב-PersistentObjectManager
         PersistentObjectManager.instance.SetPlayerHP(currentHP);
-    
-        UpdateHPUI();  // Make sure the health slider is updated after taking damage
-        
+
+        // עדכון ה-UI
+        UpdateHPUI(); 
+
+        // בדוק אם החיים הגיעו ל-0
         if (currentHP == 0)
         {
-            Die();  // קריאה לפונקציית המוות אם ה-HP הגיע ל-0
+            Debug.Log("החיים של השחקן הגיעו ל-0, קריאה לפונקציית Die()");
+            Die();  // קריאה לפונקציית המוות
         }
+    }
+
+    void Die()
+    {
+        Debug.Log("הדמות מתה!");
+
+        // הפעלת אנימציית מוות
+        animator.SetTrigger("Die"); // שינוי המשתנה הבוליאני ל-true
+        Debug.Log("האנימציה של המוות הופעלה");
+
+        // קריאה לפונקציה שממתינה לסיום האנימציה ואז טוענת את מסך המוות עם אפקט fade
+        StartCoroutine(WaitForDeathAnimation());
     }
 
 	void UpdateHPUI()
@@ -447,10 +488,35 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
     }
 
-    void Die()
+    
+
+    IEnumerator WaitForDeathAnimation()
     {
-        Debug.Log("הדמות מתה!");   // ניתן להוסיף כאן לוגיקה למוות של הדמות
-        // לדוגמה, להציג מסך "Game Over"
+        // זמן השהיה למשך זמן האנימציה (בהתאם לאורך האנימציה)
+        float deathAnimationTime = animator.GetCurrentAnimatorStateInfo(0).length;
+        
+        // ממתין עד לסיום האנימציה
+        yield return new WaitForSeconds(deathAnimationTime);
+
+        // הפעלת אפקט fade
+        yield return StartCoroutine(FadeOut(fadeDuration));
+
+        // מעבר לסצנת מסך המוות
+        SceneManager.LoadScene("DeathScreen");
+    }
+
+    IEnumerator FadeOut(float duration)
+    {
+        float currentTime = 0f;
+        Color fadeColor = fadeImage.color;  // קבלת צבע ה-Image
+
+        while (currentTime < duration)
+        {
+            currentTime += Time.deltaTime;
+            fadeColor.a = Mathf.Lerp(0, 1, currentTime / duration);  // העלאת השקיפות בהדרגה
+            fadeImage.color = fadeColor;  // עדכון צבע ה-Image
+            yield return null;
+        }
     }
 
 	void UpdateDamageBasedOnWeapon()

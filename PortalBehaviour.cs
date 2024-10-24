@@ -5,24 +5,35 @@ using UnityEngine.UI;
 
 public class PortalBehaviour : MonoBehaviour
 {
+    public string targetSceneName;  // The name of the scene to load
     public Image fadeImage;  // התמונה שתשמש לפייד
     public float fadeDuration = 1f;  // משך הזמן של הפייד
 
     private void Start()
     {
-        
-    
-        // Ensure the fade is invisible at the start
+        // ודא שהפייד שקוף בהתחלה
         Color color = fadeImage.color;
-        color.a = 0;  // Full transparency
+        color.a = 0;  // שקיפות מלאה
         fadeImage.color = color;
-        fadeImage.gameObject.SetActive(true);  // Ensure the object is active
+        fadeImage.gameObject.SetActive(true);  // ודא שהאובייקט פעיל
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))  // רק אם השחקן נכנס
         {
+            PersistentObjectManager.instance.GetLastScene();  // Save the current scene before changing
+            SceneManager.LoadScene(targetSceneName);  // Load the target scene
+            // קידום המשימה כאשר נכנסים לפורטל
+            MissionManager missionManager = FindObjectOfType<MissionManager>();
+
+            if (missionManager != null)
+            {
+                missionManager.TriggerNextMission();
+                Debug.Log("Mission advanced after passing through the portal.");
+            }
+
+            // התחלת מעבר הסצנה עם אפקט הפייד
             StartCoroutine(TransitionToScene());
         }
     }
@@ -61,7 +72,7 @@ public class PortalBehaviour : MonoBehaviour
             yield return null;  // המתן עד לפריים הבא
         }
 
-        // לוודא שהאלפא הוא בדיוק מה שרצינו בסוף
+        // ודא שהאלפא הוא בדיוק מה שרצינו בסוף
         Color finalColor = fadeImage.color;
         finalColor.a = targetAlpha;
         fadeImage.color = finalColor;

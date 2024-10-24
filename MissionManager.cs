@@ -33,7 +33,10 @@ public class MissionManager : MonoBehaviour
             "Search for the treasure notes 1 of 4.",
             "Search for the treasure notes 2 of 4.",
             "Search for the treasure notes 3 of 4.",
-            "Find the well around the lake and follow its path."
+            "Find the well around the lake and follow its path.",
+            "Find the weapon (The Blue Way!)"
+			"You must fight the enemy's to get the clue about the tressure from the big boss"
+			"Come back to the forbidden forest near to the castle and search for the treasure"
         };
 
         if (missionPanel != null)
@@ -141,7 +144,20 @@ public class MissionManager : MonoBehaviour
         return currentMissionIndex;
     }
 
-    // New method to trigger mission update after player response
+    // New method to trigger mission update after sword is picked up
+    public void TriggerNextMissionOnSwordPickup()
+    {
+        if (!IsMissionLocked && PersistentObjectManager.instance.hasSwordInHand)
+        {
+            TriggerNextMission();  // Advance mission
+        }
+        else
+        {
+            Debug.LogWarning("Sword not in hand, mission will not advance.");
+        }
+    }
+
+    // Existing method to trigger the next mission
     public void TriggerNextMission()
     {
         if (!IsMissionLocked && currentMissionIndex + 1 < missions.Count)
