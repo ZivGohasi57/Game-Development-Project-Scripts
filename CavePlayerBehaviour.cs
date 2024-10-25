@@ -13,7 +13,7 @@ public class CavePlayerBehaviour : MonoBehaviour
     public GameObject sword;
     public GameObject sword_in_hand;
     public Text pickText;
-    public Text openChestText; // יש להשאיר רק אם זה רלוונטי בעתיד
+    public Text openChestText;
 
     public AudioClip footStepsClip;
     public AudioSource footStepsAudioSource;
@@ -40,17 +40,31 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     private GameObject currentJar;  // לשמירת הכד בטווח
     private GameObject currentEnemy;  // לשמירת האויב בטווח
-	public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
+    public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
     public float currentHP;          // כמות ה-HP הנוכחית של השחקן
-    public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן	
-	
-	private int weaponType; // סוג הנשק, 0 - נשק רגיל, 1 - חרב
-    private float damage;  // משתנה לכמות הנזק
-    public Image fadeImage;  // Image במקום CanvasGroup עבור אפקט fade
-    public float fadeDuration = 1f;  // משך זמן ה-fade
+    public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן
 
+    public int weaponType; // סוג הנשק, 0 - נשק רגיל, 1 - חרב
+    public float damage;  // משתנה לכמות הנזק
+    public Image fadeImage;  // Image עבור אפקט fade
+    public float fadeDuration = 1f;
 
     private string currentSceneName = "CaveScene";     // שם הסצנה הנוכחית
+
+    public Image topEdge;
+    public Image bottomEdge;
+    public Image leftEdge;
+    public Image rightEdge;
+    public float lowHpThreshold = 40f;
+    public float maxEdgeAlpha = 0.5f;
+    private bool isBlinking = false;
+
+    public enum WeaponType { None = -1, Fists = 0, Sword = 1 }
+
+    public WeaponType currentWeapon = WeaponType.None; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
+    public bool hasFists = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
+    public bool hasSword = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
+
 
     void Awake()
     {
@@ -59,8 +73,15 @@ public class CavePlayerBehaviour : MonoBehaviour
     void Start()
     {
         PersistentObjectManager.instance.SetLastScene(currentSceneName);
+		hasFists = PersistentObjectManager.instance.hasFists;
+        hasSword = PersistentObjectManager.instance.hasSword;
 
         controller = GetComponent<CharacterController>();
+ 		
+		currentWeapon = WeaponType.None;
+	    animator.SetInteger("WeaponType", (int)currentWeapon);
+
+
 
         if (footStepsAudioSource == null)
             Debug.LogError("AudioSource(s) are not assigned!");
@@ -82,9 +103,8 @@ public class CavePlayerBehaviour : MonoBehaviour
             sword_in_hand.SetActive(PersistentObjectManager.instance.hasSwordInHand);
             sword.SetActive(PersistentObjectManager.instance.hasSwordOnWall);
             animator.SetInteger("WeaponType", PersistentObjectManager.instance.weaponType); // טען את סוג הנשק
-			weaponType = 1;
+			
         }
-		UpdateDamageBasedOnWeapon();
         DisableAllAttackColliders(); // לוודא שכל הקוליידרים כבויים בהתחלה
 		currentHP = maxHP;           // מתחילים עם כמות החיים המקסימלית
         UpdateHPUI();                // עדכון ה-UI בתחילת המשחק
@@ -96,7 +116,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         HandleMovement();
         HandleInteraction();
         HandleCombat();
-        //HandleWeaponChange();  הוספת הפונקציה לשינוי סוג הנשק
+        HandleWeaponSwitch();
     }
 
     void LateUpdate()
@@ -203,8 +223,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
         {
-			UpdateDamageBasedOnWeapon();
-            AttackEnemy(currentEnemy, damage);
+            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
         }
     }
 
@@ -225,8 +244,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
         {
-			UpdateDamageBasedOnWeapon();		
-            AttackEnemy(currentEnemy, damage);
+            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
         }
     }
 
@@ -373,6 +391,9 @@ public class CavePlayerBehaviour : MonoBehaviour
 
         sword_in_hand.SetActive(true);
         sword.SetActive(false);
+		AddWeapon("Sword");
+		PersistentObjectManager.instance.SetHasSword(true);
+		SwitchWeapon(WeaponType.Sword);
 
         int newWeaponType = 1; // עדכון סוג הנשק
         animator.SetInteger("WeaponType", newWeaponType);
@@ -384,8 +405,16 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
 
         pickText.gameObject.SetActive(false);
-    }
 
+        // הוספת הקריאה ל-MissionManager להתקדמות המשימה
+        MissionManager missionManager = FindObjectOfType<MissionManager>();
+        if (missionManager != null)
+        {
+            missionManager.AdvanceMission();
+            Debug.Log("המשימה התקדמה לאחר איסוף החרב!");
+        }
+    }
+    
     void HandleWeaponChange()
     {
         if (Input.GetKeyDown(KeyCode.Alpha0))
@@ -459,6 +488,7 @@ public class CavePlayerBehaviour : MonoBehaviour
 
         // עדכון ה-UI
         UpdateHPUI(); 
+		UpdateEdgeEffect();
 
         // בדוק אם החיים הגיעו ל-0
         if (currentHP == 0)
@@ -519,17 +549,141 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
     }
 
-	void UpdateDamageBasedOnWeapon()
+	
+
+
+	IEnumerator BlinkEdgeEffect()
+        {
+        isBlinking = true;
+        float blinkDuration = 0.5f;  // משך כל מעבר
+        float minAlpha = 0f;
+        float maxAlpha = maxEdgeAlpha;
+        bool increasing = true;  // עוקב אחר כיוון השקיפות
+    
+        while (currentHP <= lowHpThreshold)  // ממשיך להבהב כל עוד ה-HP מתחת לסף
+        {
+            float startAlpha = increasing ? minAlpha : maxAlpha;
+            float endAlpha = increasing ? maxAlpha : minAlpha;
+            float elapsedTime = 0f;
+    
+            while (elapsedTime < blinkDuration)
+            {
+                float alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / blinkDuration);
+                SetEdgeEffect(alpha);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+    
+            increasing = !increasing;  // הפוך את הכיוון
+        }
+    
+        SetEdgeEffect(0f);  // לאפס את האפקט כאשר יוצאים מהלולאה
+        isBlinking = false;
+	}
+
+	void UpdateEdgeEffect()
     {
-        // עדכון הנזק בהתאם לסוג הנשק
-        if (weaponType == 0) // נשק רגיל
+        if (currentHP <= lowHpThreshold)
         {
-            attackDamage = 20;
+            if (!isBlinking)
+            {
+                StartCoroutine(BlinkEdgeEffect());
+            }
         }
-        else if (weaponType == 1) // חרב
+        else
         {
-            attackDamage = 70;
+            // כאשר ה-HP גבוה יותר מהסף, כבה את האפקט
+            StopCoroutine(BlinkEdgeEffect());
+            SetEdgeEffect(0f);
         }
-        Debug.Log($"Updated damage: {attackDamage}, weaponType: {weaponType}");
+    }
+    
+    void SetEdgeEffect(float alpha)
+    {
+        SetAlpha(topEdge, alpha);
+        SetAlpha(bottomEdge, alpha);
+        SetAlpha(leftEdge, alpha);
+        SetAlpha(rightEdge, alpha);
+    }
+    
+    void SetAlpha(Image edge, float alpha)
+    {
+        if (edge != null)
+        {
+            Color color = edge.color;
+            color.a = alpha;
+            edge.color = color;
+        }
+    }
+
+    public void AddHealth(float healthToAdd)
+    {
+        // חיבור החיים החדשים לערך הנוכחי עד לתקרה של maxHP
+        currentHP = Mathf.Min(currentHP + healthToAdd, maxHP);
+        
+        // עדכון ה-HP של השחקן ב-PersistentObjectManager
+        PersistentObjectManager.instance.SetPlayerHP(currentHP);
+    
+        // עדכון התצוגה על ה-UI
+        UpdateHPUI();
+    }
+
+	public void AddWeapon(string weaponName)
+    {
+        if (weaponName == "Fists" && !hasFists && !hasSword) // Adding fists only if no sword or fists are added
+        {
+            hasFists = true;
+            Debug.Log("נוסף נשק: אגרופים");
+            SwitchWeapon(WeaponType.Fists);
+            animator.SetInteger("WeaponType", (int)currentWeapon);
+			PersistentObjectManager.instance.SetHasFists(true);
+        }
+        else if (weaponName == "Sword" && hasFists && !hasSword) // Adding sword only if fists are already there and sword is not
+        {
+            hasSword = true;
+            Debug.Log("נוסף נשק: חרב");
+            SwitchWeapon(WeaponType.Sword);
+            animator.SetInteger("WeaponType", (int)currentWeapon);
+			PersistentObjectManager.instance.SetHasSword(true);
+        }
+        else
+        {
+            Debug.Log($"נשק {weaponName} אינו זמין להוספה.");
+        }
+    }
+
+    void HandleWeaponSwitch()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1) && hasFists)
+        {
+            SwitchWeapon(WeaponType.Fists);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2) && hasSword)
+        {
+            SwitchWeapon(WeaponType.Sword);
+        }
+    }
+
+    void SwitchWeapon(WeaponType weaponType)
+    {
+        currentWeapon = weaponType;
+        animator.SetInteger("WeaponType", (int)currentWeapon);
+    
+        // אם הנשק הנוכחי הוא חרב, הצג את החרב ביד השחקן
+        if (currentWeapon == WeaponType.Sword)
+        {
+            sword_in_hand.SetActive(true);  // הצגת החרב ביד
+			attackDamage = 70f;
+            Debug.Log("חרב ביד השחקן.");
+        }
+        else
+        {
+            sword_in_hand.SetActive(false);  // הסתרת החרב מהיד
+			attackDamage = 20f;
+            Debug.Log("חרב הוסרה מהיד.");
+        }
+    
+        Debug.Log($"Picked weapon {currentWeapon} damage {attackDamage}");
     }
 }
+	

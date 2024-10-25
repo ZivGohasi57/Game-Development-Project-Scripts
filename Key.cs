@@ -3,12 +3,12 @@ using UnityEngine.UI;
 
 public class Key : MonoBehaviour
 {
-    public enum ItemType { Key, Gold, Weapon, Life }  // הוספת Life
-    public enum WeaponType { None, Sword, Axe, Bow }
+    public enum ItemType { Key, Gold, Weapon, Life }  
+    public enum WeaponType { None, Fists, Sword } // הוספת Fists ו-Sword
     public enum ContainerType { Chest, Jar }
 
     public ItemType itemType;
-    public WeaponType weaponType = WeaponType.None;
+    public WeaponType weaponType = WeaponType.None;  // קביעת סוג הנשק כ-none כברירת מחדל
     public ContainerType containerType = ContainerType.Chest;
 
     public Door linkedDoor;
@@ -19,18 +19,17 @@ public class Key : MonoBehaviour
     public string messageTakeKey = "Press E to take the key";
     public string messageTakeGold = "Press E to take the gold";
     public string messageTakeWeapon = "Press E to take the weapon";
-    public string messageTakeLife = "Press E to take the life boost";  // הודעה עבור life
+    public string messageTakeLife = "Press E to take the life boost";  
 
     public int goldAmount = 10;
-    public int lifeBoostAmount = 30;  // כמות החיים שהשחקן יקבל
+    public int lifeBoostAmount = 30;  
     public Animator chestAnimator;
     public Animator playerAnimator;
 
-    // משתני סאונד
     public AudioClip takeKeySound;
     public AudioClip takeGoldSound;
     public AudioClip takeWeaponSound;
-    public AudioClip takeLifeSound;  // סאונד ללקיחת life
+    public AudioClip takeLifeSound;  
     public AudioClip openChestSound;
     private AudioSource audioSource;
 
@@ -42,14 +41,12 @@ public class Key : MonoBehaviour
     void Start()
     {
         generatedItemId = $"{gameObject.name}_{transform.position}";
-
         audioSource = transform.parent.GetComponent<AudioSource>();
 
-        // בדיקה אם התיבה כבר נפתחה
         if (PersistentObjectManager.instance != null &&
             PersistentObjectManager.instance.IsContainerOpen(generatedItemId))
         {
-            SetChestOpenedState();  // השארת התיבה פתוחה
+            SetChestOpenedState();  
         }
 
         if (interactionText != null)
@@ -121,7 +118,7 @@ public class Key : MonoBehaviour
             ItemType.Key => messageTakeKey,
             ItemType.Gold => messageTakeGold,
             ItemType.Weapon => messageTakeWeapon,
-            ItemType.Life => messageTakeLife,  // הודעה עבור life
+            ItemType.Life => messageTakeLife,  
             _ => ""
         };
     }
@@ -131,7 +128,6 @@ public class Key : MonoBehaviour
         chestOpened = true;
         chestAnimator.SetTrigger("Open");
 
-        // השמעת סאונד לפתיחת התיבה
         if (audioSource != null && openChestSound != null)
         {
             audioSource.PlayOneShot(openChestSound);
@@ -178,26 +174,11 @@ public class Key : MonoBehaviour
     
             case ItemType.Weapon:
                 Debug.Log($"נשק {weaponType} נאסף!");
-    
-                if (playerAnimator != null)
-                {
-                    playerAnimator.SetInteger("WeaponType", (int)weaponType);
-                }
-    
-                if (PersistentObjectManager.instance != null)
-                {
-                    PersistentObjectManager.instance.SetWeaponType((int)weaponType);
-                    
-                    if (weaponType == WeaponType.Sword)
-                    {
-                        PersistentObjectManager.instance.hasSwordInHand = true;
-                    }
-                    else if (weaponType != WeaponType.None)
-                    {
-                        PersistentObjectManager.instance.hasWeaponInHand = true; // אם זה נשק אחר
-                    }
 
-                    Debug.Log($"PersistentObjectManager: weaponType עודכן לערך {weaponType}");
+                CavePlayerBehaviour player = FindObjectOfType<CavePlayerBehaviour>();
+                if (player != null)
+                {
+                    player.AddWeapon(weaponType.ToString()); // Pass the weapon type as a string
                 }
 
                 if (audioSource != null && takeWeaponSound != null)
@@ -207,14 +188,12 @@ public class Key : MonoBehaviour
                 break;
 
             case ItemType.Life:
-                if (PersistentObjectManager.instance != null)
+                CavePlayerBehaviour playerHealth = FindObjectOfType<CavePlayerBehaviour>();
+                if (playerHealth != null)
                 {
-                    PersistentObjectManager.instance.SetPlayerHP(
-                        Mathf.Min(PersistentObjectManager.instance.GetPlayerHP() + lifeBoostAmount, 100f)); // מגבלת HP ל-100
-                    PersistentObjectManager.instance.UpdatePlayerHPUI();
-                    Debug.Log($"אספת life ונוספו {lifeBoostAmount} חיים!");
+                    playerHealth.AddHealth(lifeBoostAmount); // שימוש בפונקציה לעדכון HP
                 }
-    
+
                 if (audioSource != null && takeLifeSound != null)
                 {
                     audioSource.PlayOneShot(takeLifeSound);
@@ -223,7 +202,7 @@ public class Key : MonoBehaviour
         }
 
         interactionText.gameObject.SetActive(false);
-        gameObject.SetActive(false);  // הפיכת המפתח ללא זמין
+        gameObject.SetActive(false);  
         PersistentObjectManager.instance?.CollectItem(generatedItemId);
         Debug.Log($"הפריט {generatedItemId} נוסף לרשימת הפריטים שנאספו.");
     }
@@ -231,7 +210,7 @@ public class Key : MonoBehaviour
     void SetChestOpenedState()
     {
         chestOpened = true;
-        chestAnimator.Play("Open", 0, 1.0f);  // הפעלת האנימציה במצב פתוח מלא
+        chestAnimator.Play("Open", 0, 1.0f);  
         itemAvailable = false;
     }
 }

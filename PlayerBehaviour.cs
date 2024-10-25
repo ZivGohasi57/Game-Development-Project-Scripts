@@ -45,6 +45,11 @@ public class PlayerBehaviour : MonoBehaviour
 
     public bool InteractionCompleted { get { return interactionCompleted; } }
 
+    public enum WeaponType { None = -1, Fists = 0, Sword = 1 } // הוספת enum לסוגי הנשקים
+    public WeaponType currentWeapon = WeaponType.None;
+    public bool hasFists = false; 
+    public bool hasSword = false; 
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -71,6 +76,9 @@ public class PlayerBehaviour : MonoBehaviour
 
         // עדכון מצב החרב לפי מנהל המצב
         sword_in_hand.SetActive(PersistentObjectManager.instance.hasSwordInHand);
+		
+		hasFists = PersistentObjectManager.instance.hasFists;
+        hasSword = PersistentObjectManager.instance.hasSword;
     }
 
     void OnDestroy()
@@ -99,7 +107,7 @@ public class PlayerBehaviour : MonoBehaviour
         HandleMovement();
         CheckInteractionComplete();
         HandleCombat();
-        HandleWeaponChange(); // פונקציה חדשה לניהול הלחצנים
+        HandleWeaponSwitch(); // פונקציה לניהול הלחצנים 1 ו-2
     }
 
     void LateUpdate()
@@ -270,42 +278,46 @@ public class PlayerBehaviour : MonoBehaviour
 
     void HandleCombat()
     {
-        // טען את weaponType מ-PersistentObjectManager
-        int weaponType = PersistentObjectManager.instance != null ? PersistentObjectManager.instance.weaponType : -1;
-
-        if (Input.GetMouseButton(1))
+        if (PersistentObjectManager.instance != null)
         {
-            EnterCombatMode();
-        }
-        else if (Input.GetMouseButtonUp(1))
-        {
-            ExitCombatMode();
-        }
-
-        if (isInCombatMode && (weaponType == 0 || weaponType == 1))
-        {
-            if (Input.GetMouseButtonDown(0))
+            int weaponType = PersistentObjectManager.instance.weaponType;
+    
+            // וידוא של השחקן נמצא במצב לחימה
+            if (Input.GetMouseButton(1))
             {
-                float timeSinceLastClick = Time.time - lastClickTime;
-                if (timeSinceLastClick <= timeBetweenClicks)
+                EnterCombatMode();
+            }
+            else if (Input.GetMouseButtonUp(1))
+            {
+                ExitCombatMode();
+            }
+    
+            // ביצוע תקיפה רק אם השחקן במצב קרב ויש לו נשק מתאים
+            if (isInCombatMode && (currentWeapon == WeaponType.Fists || currentWeapon == WeaponType.Sword))
+            {
+                if (Input.GetMouseButtonDown(0))
                 {
-                    clickCount++;
-                }
-                else
-                {
-                    clickCount = 1;
-                }
-
-                lastClickTime = Time.time;
-
-                if (clickCount == 1)
-                {
-                    ExecuteSingleAttack();
-                }
-                else if (clickCount == 2)
-                {
-                    ExecuteComboAttack();
-                    clickCount = 0;
+                    float timeSinceLastClick = Time.time - lastClickTime;
+                    if (timeSinceLastClick <= timeBetweenClicks)
+                    {
+                        clickCount++;
+                    }
+                    else
+                    {
+                        clickCount = 1;
+                    }
+    
+                    lastClickTime = Time.time;
+    
+                    if (clickCount == 1)
+                    {
+                        ExecuteSingleAttack();
+                    }
+                    else if (clickCount == 2)
+                    {
+                        ExecuteComboAttack();
+                        clickCount = 0;
+                    }
                 }
             }
         }
@@ -325,38 +337,57 @@ public class PlayerBehaviour : MonoBehaviour
 
     void ExecuteSingleAttack()
     {
-        Debug.Log("Single Attack");
-        animator.SetTrigger("SingleAttack");
+        if (currentWeapon == WeaponType.Fists || currentWeapon == WeaponType.Sword)
+        {
+            Debug.Log("Single Attack");
+            animator.SetTrigger("SingleAttack");
+        }
+        else
+        {
+            Debug.Log("No weapon equipped for attack.");
+        }
     }
 
     void ExecuteComboAttack()
     {
-        Debug.Log("Combo Attack");
-        animator.SetTrigger("ComboAttack");
+        if (currentWeapon == WeaponType.Fists || currentWeapon == WeaponType.Sword)
+        {
+            Debug.Log("Combo Attack");
+            animator.SetTrigger("ComboAttack");
+        }
+        else
+        {
+            Debug.Log("No weapon equipped for attack.");
+        }
     }
 
-    void HandleWeaponChange()
+    void HandleWeaponSwitch() // פונקציה לניהול מעבר נשקים עם לחצנים 1 ו-2
     {
-        if (Input.GetKeyDown(KeyCode.Alpha0))
+        if (Input.GetKeyDown(KeyCode.Alpha1) && hasFists)
         {
-            // לחצן 0: אי אפשר להילחם
-            PersistentObjectManager.instance.SetWeaponType(-1);
-            animator.SetInteger("WeaponType", -1);
-            Debug.Log("WeaponType set to -1, combat disabled.");
+            SwitchWeapon(WeaponType.Fists);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha1) && PersistentObjectManager.instance.hasWeaponInHand)
+        else if (Input.GetKeyDown(KeyCode.Alpha2) && hasSword)
         {
-            // לחצן 1: נשק רגיל
-            PersistentObjectManager.instance.SetWeaponType(0);
-            animator.SetInteger("WeaponType", 0);
-            Debug.Log("WeaponType set to 0, regular weapon equipped.");
+            SwitchWeapon(WeaponType.Sword);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2) && PersistentObjectManager.instance.hasSwordInHand)
+    }
+
+    void SwitchWeapon(WeaponType weaponType)
+    {
+        currentWeapon = weaponType;
+        animator.SetInteger("WeaponType", (int)currentWeapon);
+        
+        // הצגת החרב ביד רק אם בחרנו בחרב
+        if (currentWeapon == WeaponType.Sword)
         {
-            // לחצן 2: חרב
-            PersistentObjectManager.instance.SetWeaponType(1);
-            animator.SetInteger("WeaponType", 1);
-            Debug.Log("WeaponType set to 1, sword equipped.");
+            sword_in_hand.SetActive(true);
         }
+        else
+        {
+            sword_in_hand.SetActive(false);
+        }
+
+        Debug.Log($"החלפת נשק ל-{currentWeapon}");
     }
 }

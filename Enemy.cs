@@ -2,119 +2,127 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;   
 
 public class Enemy : MonoBehaviour
 {
-    public float maxHP = 100f;      // נקודות חיים של האויב
-    public float currentHP;         // נקודות חיים עכשוויות
-    public float speed = 6f;        // מהירות התקרבות לשחקן
-    public float attackRange = 1.5f; // מרחק התקפה
-    public float chaseRange = 10f;  // טווח המרדף (המרחק בו האויב יתחיל לרדוף)
-    public Animator animator;       // רפרנס לאנימטור
-    public Transform player;        // רפרנס לדמות השחקן
-    public int punchVariations = 3; // מספר האנימציות של מכות
-    public Collider hitCollider;    // הקוליידר של האויב
-    public Door door;               // רפרנס לדלת
-    public float attackDamage = 10f;   // כמות הנזק שהאויב גורם
-    public List<Collider> attackColliders; // רשימת קוליידרים להתקפה
-    public float attackCooldown = 1f;  // זמן ההמתנה בין התקפות
+    public string enemyId;
+    public float maxHP = 100f;
+    public float currentHP;
+    public float speed = 6f;
+    public float attackRange = 1.5f;
+    public float chaseRange = 10f;
+    public Animator animator;
+    public Transform player;
+    public int punchVariations = 3;
+    public Collider hitCollider;
+    public Door door;
+    public float attackDamage = 10f;
+    public List<Collider> attackColliders;
+    public float attackCooldown = 1f;
 
-    public Slider hpSlider;         // סליידר המייצג את ה-HP מעל הראש של האויב
-    public Canvas enemyCanvas;      // הקאנבס של ה-HP מעל ראש האויב
-    public float updateDelay = 0.5f;  // משך הזמן שבו נעדכן את ה-HP בצורה הדרגתית
+    public Slider hpSlider;
+    public Canvas enemyCanvas;
+    public float updateDelay = 0.5f;
 
-    private bool isDead = false;    // האם האויב מת
-    private bool isAttacking = false; // האם האויב בהתקפה
-    private bool canAttack = true;  // משתנה לשליטה על יכולת ההתקפה
-    private float targetHP;         // יעד ה-HP לעדכון הדרגתי
-    private float hitCooldown = 0.5f; // זמן מינימום בין מכות
-    private bool canBeHit = true;    // משתנה לשליטה בקבלת נזק
+    private bool isDead = false;
+    private bool isAttacking = false;
+    private bool canAttack = true;
+    private float targetHP;
+    private float hitCooldown = 0.5f;
+    private bool canBeHit = true;
 
     void Start()
     {
+        // יצירת מזהה ייחודי אם enemyId ריק
+        if (string.IsNullOrEmpty(enemyId))
+        {
+            // אם יש מזהה שמור ב-PlayerPrefs, טען אותו
+            enemyId = PlayerPrefs.GetString(gameObject.name + "_enemyId", Guid.NewGuid().ToString());
+            
+            // שמירת המזהה ב-PlayerPrefs לשימוש עתידי
+            PlayerPrefs.SetString(gameObject.name + "_enemyId", enemyId);
+        }
+
+        // בדוק אם האויב כבר מת לפי המזהה ב-PersistentObjectManager
+        if (PersistentObjectManager.instance != null && PersistentObjectManager.instance.IsEnemyDead(enemyId))
+        {
+            // השבתת האובייקט אם הוא מסומן כמת
+            gameObject.SetActive(false);
+            return;
+        }
+
         currentHP = maxHP;
         targetHP = maxHP;
-
-        // ודא שהסליידר מותאם למצב ההתחלתי
         UpdateHPUI();
     }
 
     void Update()
     {
-        // הקאנבס יפנה תמיד לכיוון המצלמה (לתצוגה ברורה)
+        if (isDead) return;
+
+        // הפניית סרגל החיים לכיוון המצלמה
         if (enemyCanvas != null)
         {
             enemyCanvas.transform.LookAt(Camera.main.transform);
             enemyCanvas.transform.Rotate(0, 180, 0);  // סיבוב של 180 מעלות כך שהקאנבס יפנה למצלמה
         }
 
-        // בדיקה אם הדלת פתוחה
-        if (!door.isUnlocked) return; // אם הדלת סגורה, לא עושים כלום
-
-        if (isDead) return; // אם האויב מת, לא עושים כלום
+        if (!door.isUnlocked) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        // בדיקה אם השחקן בטווח המרדף
         if (distanceToPlayer <= chaseRange)
         {
             if (distanceToPlayer > attackRange && !isAttacking)
             {
-                // האויב מתקרב לשחקן
                 MoveTowardsPlayer();
             }
             else if (distanceToPlayer <= attackRange && canAttack)
             {
-                // האויב מתחיל לתקוף
                 StartCoroutine(AttackPlayer());
             }
         }
         else
         {
-            // האויב מפסיק לרדוף אם השחקן מחוץ לטווח המרדף וחוזר לאנימציית idle
             StopChasing();
         }
     }
 
     void MoveTowardsPlayer()
     {
-        animator.SetBool("isWalking", true); // שינוי לאנימציה של הליכה
+        animator.SetBool("isWalking", true);
         animator.SetBool("isPunching", false);
 
         Vector3 direction = (player.position - transform.position).normalized;
-    
-        // סיבוב הגוף לכיוון השחקן
         Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f); // סיבוב חלק
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
 
-        // התקדמות לכיוון השחקן
         transform.position += direction * speed * Time.deltaTime;
     }
 
     void StopChasing()
     {
-        animator.SetBool("isWalking", false); // עצירת אנימציית הליכה
-        animator.SetBool("isIdle", true);     // מעבר לאנימציית idle
+        animator.SetBool("isWalking", false);
+        animator.SetBool("isIdle", true);
     }
 
     IEnumerator AttackPlayer()
     {
-        canAttack = false;  // למנוע התקפה נוספת עד סיום ההתקפה
-        animator.SetBool("isWalking", false); // עצירה של אנימציית הליכה
+        canAttack = false;
+        animator.SetBool("isWalking", false);
         isAttacking = true;
 
-        int punch = Random.Range(0, punchVariations); // בחירת אנימציית מכה רנדומלית
+        int punch = UnityEngine.Random.Range(0, punchVariations);
         animator.SetInteger("punch", punch);
-        animator.SetBool("isPunching", true); // שינוי לאנימציית מכות
+        animator.SetBool("isPunching", true);
 
-        EnableAttackColliders(); // הפעלת הקוליידרים כדי שהשחקן ייפגע
+        EnableAttackColliders();
 
-        yield return new WaitForSeconds(0.5f); // זמן המכה
+        yield return new WaitForSeconds(0.5f);
 
-        DisableAttackColliders(); // כיבוי הקוליידרים לאחר ההתקפה
-
+        DisableAttackColliders();
         isAttacking = false;
-        yield return new WaitForSeconds(attackCooldown);  // המתנה בין התקפות
+        yield return new WaitForSeconds(attackCooldown);
         canAttack = true;
     }
 
@@ -122,7 +130,7 @@ public class Enemy : MonoBehaviour
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = true;  // הפעלת הקוליידרים להתקפה
+            collider.enabled = true;
         }
     }
 
@@ -130,13 +138,13 @@ public class Enemy : MonoBehaviour
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = false;  // כיבוי הקוליידרים לאחר התקפה
+            collider.enabled = false;
         }
     }
 
     public void TakeDamage(float damage)
     {
-        if (canBeHit) // רק אם ניתן להיפגע
+        if (canBeHit)
         {
             targetHP -= damage;
 
@@ -145,26 +153,41 @@ public class Enemy : MonoBehaviour
                 targetHP = 0;
             }
 
-            StartCoroutine(UpdateHPWithDelay()); // קריאה לעדכון הדרגתי של HP
+            StartCoroutine(UpdateHPWithDelay());
 
             if (targetHP == 0)
             {
                 Die();
             }
 
-            canBeHit = false; // מניעת פגיעה נוספת למשך זמן קצר
-            StartCoroutine(HitCooldownRoutine()); // התחלת ה-cooldown
+            canBeHit = false;
+            StartCoroutine(HitCooldownRoutine());
         }
     }
 
     void Die()
     {
         isDead = true;
-        animator.SetTrigger("die"); // הפעלת אנימציית מוות
-        hitCollider.enabled = false; // השבתת הקוליידר לאחר מוות
+
+        // שמירת מצב האויב כמת ב-PersistentObjectManager
+        if (PersistentObjectManager.instance != null)
+        {
+            PersistentObjectManager.instance.SetEnemyDead(enemyId);
+        }
+
+        // הפעלת אנימציית מוות
+        animator.SetTrigger("die");
+
+        // כיבוי הקאנבס של האויב
+        if (enemyCanvas != null)
+        {
+            enemyCanvas.enabled = false;
+        }
+
+        // השבתת הקוליידר לאחר מוות
+        hitCollider.enabled = false;
     }
 
-    // עדכון הסליידר של HP בהדרגה
     IEnumerator UpdateHPWithDelay()
     {
         float elapsedTime = 0;
@@ -175,10 +198,10 @@ public class Enemy : MonoBehaviour
             elapsedTime += Time.deltaTime;
             currentHP = Mathf.Lerp(startHP, targetHP, elapsedTime / updateDelay);
             UpdateHPUI();
-            yield return null; // המתן פריים אחד לפני המשך הלולאה
+            yield return null;
         }
 
-        currentHP = targetHP;  // לוודא שה-HP מתעדכן בצורה מדויקת בסוף
+        currentHP = targetHP;
         UpdateHPUI();
     }
 
@@ -186,26 +209,24 @@ public class Enemy : MonoBehaviour
     {
         if (hpSlider != null)
         {
-            hpSlider.value = currentHP / maxHP;  // עדכון הסליידר בהתאם לאחוזי ה-HP
+            hpSlider.value = currentHP / maxHP;
         }
     }
 
-    // פונקציה שמוסיפה זמן מינימלי בין מכות
     IEnumerator HitCooldownRoutine()
     {
-        yield return new WaitForSeconds(hitCooldown); // המתן זמן קבוע לפני שניתן להיפגע שוב
+        yield return new WaitForSeconds(hitCooldown);
         canBeHit = true;
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PlayerAttack"))  // בדיקה אם הפגיעה באה מהשחקן
+        if (other.CompareTag("PlayerAttack"))
         {
-            // קבל את הנזק מהשחקן על ידי גישה לסקריפט 'CavePlayerBehaviour'
             CavePlayerBehaviour player = other.GetComponentInParent<CavePlayerBehaviour>();
             if (player != null)
             {
-                TakeDamage(player.attackDamage);  // הורדת כמות חיים בהתאם לנזק של השחקן
+                TakeDamage(player.attackDamage);
                 Debug.Log("האויב נפגע! חיים נוכחיים: " + targetHP);
             }
         }

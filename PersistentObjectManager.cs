@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,18 +10,20 @@ public class PersistentObjectManager : MonoBehaviour
     public bool hasSwordInHand = false;
     public bool hasSwordOnWall = true;
     public bool hasWeaponInHand = false;
-    public int weaponType = -1; 
+    public int weaponType = -1; // 0 - אגרופים, 1 - חרב 
     
     public float playerHP = 100f;  
     public HPManager hpManager;    
     public string lastSceneName;  // משתנה לשמירת הסצנה האחרונה
+	public WeaponUIManager weaponCanvasManager;  // קנבס לנשק
 
-
-
-
+    private HashSet<string> deadEnemies = new HashSet<string>(); 
     private HashSet<string> collectedItems = new HashSet<string>();  
     private HashSet<string> openDoors = new HashSet<string>();  
     private HashSet<string> openedContainers = new HashSet<string>();  
+    public HashSet<string> collectedWeapons = new HashSet<string>();  // נשקים שנאספו
+	public bool hasFists = false;  // האם אגרופים נאספו
+    public bool hasSword = false;  // האם החרב נאספה
 
     // Variables for mission management
     public int currentMissionIndex = 0;  // Tracks the current mission index
@@ -110,11 +111,12 @@ public class PersistentObjectManager : MonoBehaviour
     {
         return playerHP;
     }
-
+ 
     // Managing sword state
     public void SetHasSword(bool hasSword)
     {
-        hasSwordInHand = hasSword;
+        this.hasSword = hasSword;
+        weaponCanvasManager?.UpdateWeaponUI();
     }
 
     public void SetHasSwordOnWall(bool hasSword)
@@ -128,10 +130,36 @@ public class PersistentObjectManager : MonoBehaviour
         hasWeaponInHand = hasWeapon;
     }
 
-    // Setting weapon type
+    // Setting and getting the current weapon type
     public void SetWeaponType(int type)
     {
         weaponType = type;
+
+        // אם קנבס הנשק קיים, עדכן את ה-UI של הנשק
+        if (weaponCanvasManager != null)
+        {
+            weaponCanvasManager.UpdateWeaponUI();
+        }
+    }
+
+    public int GetWeaponType()
+    {
+        return weaponType;
+    }
+
+    // Managing collected weapons
+    public void AddWeapon(string weaponName)
+    {
+        if (!collectedWeapons.Contains(weaponName))
+        {
+            collectedWeapons.Add(weaponName);
+            Debug.Log($"Collected weapon: {weaponName}");
+        }
+    }
+
+    public bool HasCollectedWeapon(string weaponName)
+    {
+        return collectedWeapons.Contains(weaponName);
     }
 
     // Checking and saving collected items
@@ -176,23 +204,64 @@ public class PersistentObjectManager : MonoBehaviour
         return openedContainers.Contains(containerId);
     }
 
-	
-
-	public void SetLastScene(string sceneName)
+    public void SetLastScene(string sceneName)
     {
         lastSceneName = sceneName;
     }
 
-    // פונקציה לקבלת שם הסצנה האחרונה
+    // Get the last scene name
     public string GetLastScene()
     {
         return lastSceneName;
     }
 
-	public void RespawnLife()
+    public void RespawnLife()
     {
-        playerHP = 100f;  // החזרת חיים מלאים לשחקן
-        UpdatePlayerHPUI();  // עדכון ה-UI כדי להציג את כמות החיים המחודשת
+        playerHP = 100f;  // Restore player's health to full
+        UpdatePlayerHPUI();  // Update UI to reflect the renewed health
     }
+
+    // Function to mark an enemy as dead
+    public void SetEnemyDead(string enemyId)
+    {
+        if (!deadEnemies.Contains(enemyId))
+        {
+            deadEnemies.Add(enemyId);
+        }
+    }
+
+    // Function to check if an enemy is dead
+    public bool IsEnemyDead(string enemyId)
+    {
+        return deadEnemies.Contains(enemyId);
+    }
+
+    // Save the current weapon state (can be used before scene transitions)
+    public void SaveWeaponState(int currentWeaponType)
+    {
+        SetWeaponType(currentWeaponType);
+    }
+
+    // Load the current weapon state after transitioning to a new scene
+    public void LoadWeaponState()
+    {
+        int loadedWeaponType = GetWeaponType();
+        Debug.Log($"Loaded weapon type: {loadedWeaponType}");
+    }
+	
+
+    public void SetWeaponCanvasManager(WeaponUIManager manager)
+    {
+        weaponCanvasManager = manager;
+        weaponCanvasManager.UpdateWeaponUI();
+    }
+
+
+	public void SetHasFists(bool hasFists)
+    {
+        this.hasFists = hasFists;
+        weaponCanvasManager?.UpdateWeaponUI();
+    }
+
     
 }
