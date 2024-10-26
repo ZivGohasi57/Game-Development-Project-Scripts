@@ -25,6 +25,7 @@ public class CavePlayerBehaviour : MonoBehaviour
     CharacterController controller;
     float speed = 10f;
     float runSpeed = 20f;
+    float combatWalkSpeed = 5f; // מהירות הליכה במצב קרב
     public float mouseSensitivity = 5f;
     public float verticalClampAngle = 45f;
 
@@ -64,6 +65,7 @@ public class CavePlayerBehaviour : MonoBehaviour
     public WeaponType currentWeapon = WeaponType.None; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
     public bool hasFists = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
     public bool hasSword = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
+    public bool isAttacking = false;
 
 
     void Awake()
@@ -78,9 +80,17 @@ public class CavePlayerBehaviour : MonoBehaviour
 
         controller = GetComponent<CharacterController>();
  		
-		currentWeapon = WeaponType.None;
-	    animator.SetInteger("WeaponType", (int)currentWeapon);
-
+        int savedWeaponType = PersistentObjectManager.instance.weaponType;
+        currentWeapon = (WeaponType)savedWeaponType;
+        SwitchWeapon(currentWeapon);	
+        if (currentWeapon == WeaponType.Sword && hasSword)
+        {
+            sword_in_hand.SetActive(true);  // הצגת החרב ביד השחקן
+        }
+        else
+        {
+            sword_in_hand.SetActive(false); // כיבוי תצוגת החרב אם היא לא הנשק הנבחר
+        }
 
 
         if (footStepsAudioSource == null)
@@ -197,6 +207,7 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         isInCombatMode = true;
         animator.SetBool("isInCombatMode", true);
+        
     }
 
     void ExitCombatMode()
@@ -207,8 +218,10 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     void ExecuteSingleAttack()
     {
+        isAttacking = true; // לנעילת התנועה
         Debug.Log("Single Attack");
         animator.SetTrigger("SingleAttack");
+        StartCoroutine(AttackAnimationLock(1f)); // מנעילת תנועה עד לסיום האנימציה
         StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
 		
 		if (currentJar != null) 
@@ -229,8 +242,10 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     void ExecuteComboAttack()
     {
+        isAttacking = true; // לנעילת התנועה
         Debug.Log("Combo Attack");
         animator.SetTrigger("ComboAttack");
+        StartCoroutine(AttackAnimationLock(1f));
         StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
 		if (currentJar != null) 
 		{ 
@@ -246,6 +261,13 @@ public class CavePlayerBehaviour : MonoBehaviour
         {
             AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
         }
+    }
+    
+    IEnumerator AttackAnimationLock(float extraWaitTime)
+    {
+        // המתן עד שהאנימציה של ההתקפה תסתיים
+        yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length + extraWaitTime);
+        isAttacking = false; // שחרור הנעילה
     }
 
     IEnumerator ActivateAttackColliders()
@@ -284,7 +306,17 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     void HandleMovement()
     {
-        float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : speed;
+        float currentSpeed;
+
+        // קביעת מהירות לפי מצב הקרב
+        if (isInCombatMode)
+        {
+            currentSpeed = combatWalkSpeed;
+        }
+        else
+        {
+            currentSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : speed;
+        }
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
@@ -307,15 +339,8 @@ public class CavePlayerBehaviour : MonoBehaviour
                 controller.Move(moveDirection * Time.deltaTime);
                 UpdateAnimation(direction.magnitude, Input.GetKey(KeyCode.LeftShift));
 
-                // עדכון Pitch של הסאונד בהתאם למצב ריצה או הליכה
-                if (Input.GetKey(KeyCode.LeftShift)) // אם השחקן רץ
-                {
-                    footStepsAudioSource.pitch = 2f; // מהירות סאונד גבוהה יותר בריצה
-                }
-                else // אם השחקן בהליכה
-                {
-                    footStepsAudioSource.pitch = 1.0f; // מהירות סאונד רגילה בהליכה
-                }
+                footStepsAudioSource.pitch = (currentSpeed == runSpeed) ? 2f : (isInCombatMode ? 0.75f : 1f);
+
 
                 // הפעל את סאונד הצעדים אם הוא לא כבר מתנגן
                 if (!footStepsAudioSource.isPlaying)
@@ -668,6 +693,10 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         currentWeapon = weaponType;
         animator.SetInteger("WeaponType", (int)currentWeapon);
+        if (PersistentObjectManager.instance != null)
+        {
+            PersistentObjectManager.instance.SetWeaponType((int)weaponType);
+        }
     
         // אם הנשק הנוכחי הוא חרב, הצג את החרב ביד השחקן
         if (currentWeapon == WeaponType.Sword)

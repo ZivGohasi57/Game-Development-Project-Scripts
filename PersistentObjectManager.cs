@@ -116,6 +116,7 @@ public class PersistentObjectManager : MonoBehaviour
     public void SetHasSword(bool hasSword)
     {
         this.hasSword = hasSword;
+		this.hasSwordInHand = hasSword;
         weaponCanvasManager?.UpdateWeaponUI();
     }
 
