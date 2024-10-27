@@ -73,6 +73,7 @@ public class DeathScreenManager : MonoBehaviour
         float currentTime = 0f;
         Color fadeColor = fadeImage.color;
 
+        PersistentObjectManager.instance.ClearData();
         // העלאת השקיפות בהדרגה
         while (currentTime < fadeDuration)
         {

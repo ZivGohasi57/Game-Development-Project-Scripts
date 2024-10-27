@@ -84,7 +84,7 @@ public class Door : MonoBehaviour
         }
     }
 
-    void TryOpenDoor()
+    public void TryOpenDoor()
     {
         if (requiresKey && !hasKey)
         {

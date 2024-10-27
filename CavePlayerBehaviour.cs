@@ -66,6 +66,16 @@ public class CavePlayerBehaviour : MonoBehaviour
     public bool hasFists = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
     public bool hasSword = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
     public bool isAttacking = false;
+	public AudioClip voiceSword;
+	public AudioClip voiceForest;
+	public AudioSource audioSource;
+	public Color normalColor = Color.green;   // צבע ברירת מחדל למעל 40% חיים
+    public Color lowHpColor = Color.yellow;   // צבע כתום בין 20% ל-40%
+    public Color criticalHpColor = Color.red; // צבע אדום מתחת ל-20%צבע אדום מתחת ל-
+    private Coroutine healthRegenCoroutine;    // משתנה לשמירה על ה-coroutine של חידוש החיים
+
+
+	
 
 
     void Awake()
@@ -438,6 +448,7 @@ public class CavePlayerBehaviour : MonoBehaviour
             missionManager.AdvanceMission();
             Debug.Log("המשימה התקדמה לאחר איסוף החרב!");
         }
+		VoiceSwordTalk();
     }
     
     void HandleWeaponChange()
@@ -537,9 +548,22 @@ public class CavePlayerBehaviour : MonoBehaviour
 
 	void UpdateHPUI()
     {
-        if (hpSlider != null)
+       if (hpSlider != null)
         {
-            hpSlider.value = currentHP / maxHP;  // עדכון ערך הסליידר ב-UI
+            hpSlider.value = currentHP / maxHP;
+
+            if (currentHP / maxHP >= 0.4f)
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = normalColor;
+            }
+            else if (currentHP / maxHP >= 0.2f)
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = lowHpColor;
+            }
+            else
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = criticalHpColor;
+            }
         }
     }
 
@@ -713,6 +737,33 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
     
         Debug.Log($"Picked weapon {currentWeapon} damage {attackDamage}");
+    }
+   
+
+	void VoiceSwordTalk()
+	{
+		if (voiceSword != null)
+        {
+            audioSource.PlayOneShot(voiceSword);
+        }	
+	}
+
+	public void VoiceForestTalk()
+	{
+		if (voiceForest != null)
+		{
+			audioSource.PlayOneShot(voiceForest);
+		}
+	}
+
+	IEnumerator RegenerateHealth()
+    {
+        while (currentHP < maxHP * 0.3f && !isInCombatMode)
+        {
+            currentHP = Mathf.Min(currentHP + 1, maxHP * 0.3f);  // הוספה של 1 HP עד לתקרה של 30%
+            UpdateHPUI();  // עדכון UI
+            yield return new WaitForSeconds(2f);  // השהייה של 2 שניות לפני תוספת הבאה
+        }
     }
 }
 	

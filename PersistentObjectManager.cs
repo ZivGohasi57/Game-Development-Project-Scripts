@@ -11,6 +11,7 @@ public class PersistentObjectManager : MonoBehaviour
     public bool hasSwordOnWall = true;
     public bool hasWeaponInHand = false;
     public int weaponType = -1; // 0 - אגרופים, 1 - חרב 
+	public MissionManager missionManager;
     
     public float playerHP = 100f;  
     public HPManager hpManager;    
@@ -24,6 +25,8 @@ public class PersistentObjectManager : MonoBehaviour
     public HashSet<string> collectedWeapons = new HashSet<string>();  // נשקים שנאספו
 	public bool hasFists = false;  // האם אגרופים נאספו
     public bool hasSword = false;  // האם החרב נאספה
+	public bool returningFromScene2 = false;
+
 
     // Variables for mission management
     public int currentMissionIndex = 0;  // Tracks the current mission index
@@ -53,17 +56,21 @@ public class PersistentObjectManager : MonoBehaviour
         }
     }
 
+	public void SetReturningFromScene2(bool returning)
+    {
+        returningFromScene2 = returning;
+    }
     // Function to advance to the next mission
     public void AdvanceMission()
     {
-        if (currentMissionIndex < missions.Count - 1)  // Ensures we don't exceed the mission list
-        {
-            currentMissionIndex++;
-        }
-        else
-        {
-            Debug.Log("All missions completed!");
-        }
+		if (missionManager != null)
+		{
+        	missionManager.AdvanceMission();
+		}
+		else 
+		{
+			Debug.Log("Mission manager is null");
+		}
     }
 
     // Function to get the current mission text
@@ -116,8 +123,9 @@ public class PersistentObjectManager : MonoBehaviour
     public void SetHasSword(bool hasSword)
     {
         this.hasSword = hasSword;
-		this.hasSwordInHand = hasSword;
+        this.hasSwordInHand = hasSword;
         weaponCanvasManager?.UpdateWeaponUI();
+        
     }
 
     public void SetHasSwordOnWall(bool hasSword)
@@ -218,7 +226,7 @@ public class PersistentObjectManager : MonoBehaviour
 
     public void RespawnLife()
     {
-        playerHP = 100f;  // Restore player's health to full
+        playerHP = 30f;  // Restore player's health to full
         UpdatePlayerHPUI();  // Update UI to reflect the renewed health
     }
 
@@ -263,6 +271,23 @@ public class PersistentObjectManager : MonoBehaviour
         this.hasFists = hasFists;
         weaponCanvasManager?.UpdateWeaponUI();
     }
+
+	 public void ClearData()
+    {
+        hasSwordInHand = false;
+        hasSwordOnWall = true;
+        hasWeaponInHand = false;
+        weaponType = -1;
+        playerHP = 100f;
+        lastSceneName = string.Empty;
+        deadEnemies.Clear();
+        collectedItems.Clear();
+        openDoors.Clear();
+        openedContainers.Clear();
+        collectedWeapons.Clear();
+    }
+
+	
 
     
 }

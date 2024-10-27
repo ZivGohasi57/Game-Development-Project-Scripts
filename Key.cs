@@ -1,14 +1,16 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Key : MonoBehaviour
 {
     public enum ItemType { Key, Gold, Weapon, Life }  
-    public enum WeaponType { None, Fists, Sword } // הוספת Fists ו-Sword
+    public enum WeaponType { None, Fists, Sword }
     public enum ContainerType { Chest, Jar }
 
     public ItemType itemType;
-    public WeaponType weaponType = WeaponType.None;  // קביעת סוג הנשק כ-none כברירת מחדל
+    public WeaponType weaponType = WeaponType.None;
     public ContainerType containerType = ContainerType.Chest;
 
     public Door linkedDoor;
@@ -19,24 +21,27 @@ public class Key : MonoBehaviour
     public string messageTakeKey = "Press E to take the key";
     public string messageTakeGold = "Press E to take the gold";
     public string messageTakeWeapon = "Press E to take the weapon";
-    public string messageTakeLife = "Press E to take the life boost";  
+    public string messageTakeLife = "Press E to take the life boost";
 
     public int goldAmount = 10;
-    public int lifeBoostAmount = 30;  
+    public int lifeBoostAmount = 30;
+    public bool isBigTreasure = false; // האם זה "האוצר הגדול"
+    public Image fadeImage; // תמונת הפייד
+
     public Animator chestAnimator;
     public Animator playerAnimator;
-
     public AudioClip takeKeySound;
     public AudioClip takeGoldSound;
     public AudioClip takeWeaponSound;
-    public AudioClip takeLifeSound;  
+    public AudioClip takeLifeSound;
     public AudioClip openChestSound;
+    
     private AudioSource audioSource;
-
     private bool isInRange = false;
     private bool chestOpened = false;
     private bool itemAvailable = false;
     private string generatedItemId;
+
 
     void Start()
     {
@@ -165,8 +170,16 @@ public class Key : MonoBehaviour
             case ItemType.Gold:
                 GoldManager.Instance.AddGold(goldAmount);
                 Debug.Log($"אספת {goldAmount} זהב!");
-    
-                if (audioSource != null && takeGoldSound != null)
+
+                if (isBigTreasure)
+                {
+					PlayerBehaviour player1 = FindObjectOfType<PlayerBehaviour>();
+                    if (player1 != null)
+                    {
+                        player1.StartTransitionToCredits();
+                    }
+                }
+                else if (audioSource != null && takeGoldSound != null)
                 {
                     audioSource.PlayOneShot(takeGoldSound);
                 }
@@ -178,7 +191,7 @@ public class Key : MonoBehaviour
                 CavePlayerBehaviour player = FindObjectOfType<CavePlayerBehaviour>();
                 if (player != null)
                 {
-                    player.AddWeapon(weaponType.ToString()); // Pass the weapon type as a string
+                    player.AddWeapon(weaponType.ToString());
                 }
 
                 if (audioSource != null && takeWeaponSound != null)
@@ -191,7 +204,7 @@ public class Key : MonoBehaviour
                 CavePlayerBehaviour playerHealth = FindObjectOfType<CavePlayerBehaviour>();
                 if (playerHealth != null)
                 {
-                    playerHealth.AddHealth(lifeBoostAmount); // שימוש בפונקציה לעדכון HP
+                    playerHealth.AddHealth(lifeBoostAmount);
                 }
 
                 if (audioSource != null && takeLifeSound != null)
@@ -206,6 +219,8 @@ public class Key : MonoBehaviour
         PersistentObjectManager.instance?.CollectItem(generatedItemId);
         Debug.Log($"הפריט {generatedItemId} נוסף לרשימת הפריטים שנאספו.");
     }
+
+    
 
     void SetChestOpenedState()
     {

@@ -34,9 +34,11 @@ public class MissionManager : MonoBehaviour
             "Search for the treasure notes 2 of 4.",
             "Search for the treasure notes 3 of 4.",
             "Find the well around the lake and follow its path.",
-            "Find the weapon (The Blue Way!)",
-			"You must fight the enemy's to get the clue about the tressure from the big boss",
-			"Come back to the forbidden forest near to the castle and search for the treasure"
+            "Find weapons (The Blue Way!)",
+			"You must fight the enemy's to get the clue about the tressure from the big boss (The Red Way!)",
+            "Get the Key and fight againts the big boss",
+			"Get out from the cave",
+            "Go To the forbiedden forest and use you new skill to break into it"
         };
 
         if (missionPanel != null)
@@ -176,11 +178,13 @@ public class MissionManager : MonoBehaviour
     // פונקציה להתקדמות במשימות
     public void AdvanceMission()
     {
+		Debug.Log("here 1");
         if (currentMissionIndex < missions.Count - 1)
         {
+			Debug.Log("here 2");
             currentMissionIndex++;
             Debug.Log("משימה התקדמה: " + missions[currentMissionIndex]);
-            UpdateMissionUI(); // עדכן את ה-UI או כל מה שצריך במשחק שלך
+            UpdateMission(missions[currentMissionIndex]); // עדכן את ה-UI או כל מה שצריך במשחק שלך
         }
         else
         {
@@ -188,10 +192,5 @@ public class MissionManager : MonoBehaviour
         }
     }
 
-    // פונקציה לעדכון ה-UI (או מה שנדרש במשחק שלך)
-    private void UpdateMissionUI()
-    {
-        // כאן ייכנס הקוד לעדכון ה-UI של המשימה הנוכחית
-        Debug.Log("עדכון משימה ל-UI: " + missions[currentMissionIndex]);
-    }
+    
 }

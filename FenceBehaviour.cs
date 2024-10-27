@@ -4,6 +4,7 @@ using System.Collections;
 
 public class FenceBehaviour : MonoBehaviour
 {
+		
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("PlayerAttack"))
@@ -12,6 +13,7 @@ public class FenceBehaviour : MonoBehaviour
             PlayerBehaviour player = other.GetComponentInParent<PlayerBehaviour>();
             if (player != null && player.isAttacking) // בדיקה אם השחקן במצב התקפה
             {
+			
                 StartCoroutine(DestroyWithDelay(0.5f));  // התחלת coroutine עם עיכוב של 0.5 שניות
             }
         }

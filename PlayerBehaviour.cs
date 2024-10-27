@@ -68,6 +68,8 @@ public class PlayerBehaviour : MonoBehaviour
     public Image fadeImage;  // Image עבור אפקט fade
 	public bool isAttacking = false;
 	float combatWalkSpeed = 5f; // מהירות הליכה במצב קרב
+	public AudioSource backAudioSource; // מקור השמע שברצונך להנמיך
+
 
   
   void Start()
@@ -653,4 +655,46 @@ public class PlayerBehaviour : MonoBehaviour
             edge.color = color;
         }
     }
+
+	public void StartTransitionToCredits()
+    {
+        StartCoroutine(TransitionToCredits());
+    }
+
+    private IEnumerator TransitionToCredits()
+    {
+        Debug.Log("Starting transition to credits"); // בדיקה שהמעבר מתחיל
+        
+        if (fadeImage != null)
+        {
+            fadeImage.color = new Color(0, 0, 0, 0); // התחל משקיפות מלאה
+            fadeImage.gameObject.SetActive(true); // ודא שהתמונה פעילה
+
+            float fadeDuration = 4f; // זמן הפייד
+            float initialVolume = backAudioSource != null ? backAudioSource.volume : 0f; // עוצמת הקול ההתחלתית
+
+            for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+            {
+                // עדכון הפייד
+                float alpha = Mathf.Clamp01(t / fadeDuration);
+                fadeImage.color = new Color(0, 0, 0, alpha);
+
+                // הנמכת עוצמת הקול
+                if (backAudioSource != null) 
+                {
+                    backAudioSource.volume = Mathf.Lerp(initialVolume, 0, t / fadeDuration);
+                }
+
+                yield return null;
+            }
+
+            // ודא שהפייד שחור מלא ועוצמת הקול אפסית
+            fadeImage.color = new Color(0, 0, 0, 1f);
+            if (backAudioSource != null) backAudioSource.volume = 0f;
+        }
+
+        yield return new WaitForSeconds(1f); // המתנה קצרה לאחר הפייד
+        SceneManager.LoadScene("Credits"); // החלף לשם הסצנה שלך
+    }
+
 }

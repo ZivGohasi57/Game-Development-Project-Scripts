@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System;   
+using TMPro;
+
 
 public class Enemy : MonoBehaviour
 {
@@ -31,9 +33,32 @@ public class Enemy : MonoBehaviour
     private float targetHP;
     private float hitCooldown = 0.5f;
     private bool canBeHit = true;
+	public Door taskDoor; // דלת שנפתחת לאחר מותו של האויב
+    public bool isFinalBoss = false; // משתנה לסימון אם זה הבוס הסופי
+	public AudioClip chaseSound;  // הסאונד שישמיע בזמן רדיפה
+    private AudioSource audioSource;
+	private bool isChasing = false;  // משתנה בוליאני לעקוב אחרי מצב רדיפה
+	public bool needToMakeMeTalk;  // משתנה בו��י��ני להפ��י�� את הרדי��ה
+	public Color normalColor = Color.green;   // צבע ברירת מחדל למעל 40% חיים
+    public Color lowHpColor = Color.yellow;   // צבע כתום בין 20% ל-40%
+    public Color criticalHpColor = Color.red; // צבע אדום מתחת ל-20%צבע אדום מתחת ל-
+    public TMP_Text hpText;  // Reference to TextMeshPro text component for HP
+
+
+
+
+
+
 
     void Start()
     {
+		audioSource = GetComponent<AudioSource>();
+        
+        if (audioSource != null && chaseSound != null)
+        {
+            audioSource.clip = chaseSound;
+            audioSource.loop = true;  // הסאונד יחזור על עצמו במהלך הרדיפה
+        }
         // יצירת מזהה ייחודי אם enemyId ריק
         if (string.IsNullOrEmpty(enemyId))
         {
@@ -75,6 +100,7 @@ public class Enemy : MonoBehaviour
         {
             if (distanceToPlayer > attackRange && !isAttacking)
             {
+				StartChase();
                 MoveTowardsPlayer();
             }
             else if (distanceToPlayer <= attackRange && canAttack)
@@ -84,7 +110,32 @@ public class Enemy : MonoBehaviour
         }
         else
         {
+            StopChase();
             StopChasing();
+        }
+    }
+
+	void StartChase()
+    {
+        if (!isChasing)
+        {
+            isChasing = true;
+            if (audioSource != null && !audioSource.isPlaying)
+            {
+                audioSource.Play();  // התחלת הסאונד של הרדיפה
+            }
+        }
+    }
+
+    void StopChase()
+    {
+        if (isChasing)
+        {
+            isChasing = false;
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                audioSource.Stop();  // עצירת הסאונד כאשר מפסיק לרדוף
+            }
         }
     }
 
@@ -108,21 +159,25 @@ public class Enemy : MonoBehaviour
 
     IEnumerator AttackPlayer()
     {
+        
         canAttack = false;
         animator.SetBool("isWalking", false);
         isAttacking = true;
-
+    
         int punch = UnityEngine.Random.Range(0, punchVariations);
         animator.SetInteger("punch", punch);
         animator.SetBool("isPunching", true);
-
-        EnableAttackColliders();
-
-        yield return new WaitForSeconds(0.5f);
-
-        DisableAttackColliders();
+    
+        yield return new WaitForSeconds(1f); // השהייה קצרה עד שהמכה מתחילה
+    
+        EnableAttackColliders(); // הפעלת הקוליידרים בזמן המכה
+    
+        yield return new WaitForSeconds(1f); // משך הזמן שהקוליידרים פועלים בזמן המכה
+    
+        DisableAttackColliders(); // כיבוי הקוליידרים בסיום המכה
         isAttacking = false;
-        yield return new WaitForSeconds(attackCooldown);
+        animator.SetBool("isPunching", false); // חזרה למצב רגיל
+        yield return new WaitForSeconds(attackCooldown); // השהייה לפני שמכה נוספת אפשרית
         canAttack = true;
     }
 
@@ -186,7 +241,53 @@ public class Enemy : MonoBehaviour
 
         // השבתת הקוליידר לאחר מוות
         hitCollider.enabled = false;
+
+		 if (taskDoor != null)
+        {
+            taskDoor.taskCompleted = true;
+            taskDoor.TryOpenDoor();
+            Debug.Log("האויב מת - פתיחת דלת המשימה.");
+        }
+
+        // אם זה הבוס הסופי, נקדם משימה
+        if (isFinalBoss && PersistentObjectManager.instance != null)
+        {
+            PersistentObjectManager.instance.AdvanceMission();
+            Debug.Log("הבוס הסופי מת - קידום המשימה.");
+        }
+
+    	StartCoroutine(GradualStopChase());
+		if (isFinalBoss && needToMakeMeTalk)
+        {
+            CavePlayerBehaviour player = FindObjectOfType<CavePlayerBehaviour>();
+            if (player != null)
+            {
+                player.VoiceForestTalk();
+            }
+        }
     }
+
+	IEnumerator GradualStopChase()
+    {
+        float delayTime = 2f; // הזמן שנרצה עד לעצירה מלאה
+        float initialVolume = audioSource.volume; // עוצמת המוזיקה הנוכחית
+    
+        float elapsedTime = 0;
+        while (elapsedTime < delayTime)
+        {
+            elapsedTime += Time.deltaTime;
+            // הנמכת המוזיקה בהדרגה
+            audioSource.volume = Mathf.Lerp(initialVolume, 0, elapsedTime / delayTime);
+            yield return null;
+        }
+    
+        // הבטחה שהמוזיקה נעלמת
+        audioSource.volume = 0;
+        audioSource.Stop(); // עצירת המוזיקה באופן סופי
+    
+        StopChase(); // עצירה סופית של המרדף
+    }
+    
 
     IEnumerator UpdateHPWithDelay()
     {
@@ -210,8 +311,27 @@ public class Enemy : MonoBehaviour
         if (hpSlider != null)
         {
             hpSlider.value = currentHP / maxHP;
+
+            if (currentHP / maxHP >= 0.4f)
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = normalColor;
+            }
+            else if (currentHP / maxHP >= 0.2f)
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = lowHpColor;
+            }
+            else
+            {
+                hpSlider.fillRect.GetComponent<Image>().color = criticalHpColor;
+            }
+        }
+
+        if (hpText != null)
+        {
+            hpText.text = Mathf.RoundToInt(currentHP) + "/" + Mathf.RoundToInt(maxHP); // Display HP as text
         }
     }
+    
 
     IEnumerator HitCooldownRoutine()
     {
@@ -231,4 +351,6 @@ public class Enemy : MonoBehaviour
             }
         }
     }
+
+	
 }
