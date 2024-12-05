@@ -24,7 +24,7 @@ public class KnightBehaviourScript : MonoBehaviour
         float distance = Vector3.Distance(target.transform.position, transform.position);
         if (!agent.isStopped && distance < 3)
         {
-            if(target.transform.position.y<8)// move it to the second floor
+            if(target.transform.position.y<8)
             {
                 target.transform.position = Point2.transform.position;  
             }
@@ -39,14 +39,14 @@ public class KnightBehaviourScript : MonoBehaviour
         if (!agent.isStopped && distance < 2)
         {
                 agent.isStopped = true;
-                animator.SetInteger("State", 0); //animation idle
+                animator.SetInteger("State", 0);
 
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
             if (agent.isStopped)
             {
-                animator.SetInteger("State", 1); //walking
+                animator.SetInteger("State", 1);
                 agent.SetDestination(target.transform.position);
                 agent.isStopped = false;
                 line.positionCount = agent.path.corners.Length;
