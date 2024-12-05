@@ -4,28 +4,25 @@ using UnityEngine;
 
 public class CoinBehaviour : MonoBehaviour
 {
-    public GameObject player; // הפניה לדמות השחקן
-    public GameObject parent; // הפניה להורה של האובייקט הזה
-    public MissionManager missionManager; // משתנה לחיבור ל-MissionManager
+    public GameObject player;
+    public GameObject parent;
+    public MissionManager missionManager;
 
     private void OnTriggerEnter(Collider other)
     {
-        // בדיקה אם השחקן נכנס לקוליידר
         if (other.gameObject == player)
         {
-            gameObject.SetActive(false); // הפוך את המסמך ללא פעיל
+            gameObject.SetActive(false); 
             AudioSource sound = parent.GetComponent<AudioSource>();
             sound.Play();
 
-            // גישה לסקריפט של השחקן והפעלת פונקציה להוספת מסמך
             PlayerBehaviour playerBehaviour = player.GetComponent<PlayerBehaviour>();
             if (playerBehaviour != null)
             {
-                playerBehaviour.CollectDocument(); // קריאה לפונקציה לעדכון מספר המסמכים
-                // עדכון המשימה לאחר איסוף המסמך
+                playerBehaviour.CollectDocument(); 
                 if (missionManager != null)
                 {
-                    missionManager.TriggerNextMission(); // קידום למשימה הבאה
+                    missionManager.TriggerNextMission();
                     Debug.Log("Mission updated to the next one after collecting document.");
                 }
             }
