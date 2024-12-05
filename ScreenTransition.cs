@@ -32,10 +32,6 @@ public class ScreenTransition : MonoBehaviour
         gateController = FindObjectOfType<GateController>();
         missionManager = FindObjectOfType<MissionManager>();
 
-        if (playerBehaviour == null || gateController == null || missionManager == null)
-        {
-            Debug.LogError("PlayerBehaviour, GateController or MissionManager not found!");
-        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -61,12 +57,10 @@ public class ScreenTransition : MonoBehaviour
         }
 
         playerBehaviour.HasChangedClothes = true;
-        Debug.Log("Player has changed clothes. HasChangedClothes is now true.");
 
         if (gateController != null)
         {
             gateController.SetCanPassThrough(true);
-            Debug.Log("GateController updated: canPassThrough set to true.");
         }
 
         yield return StartCoroutine(FadeToClear());
@@ -81,14 +75,11 @@ public class ScreenTransition : MonoBehaviour
         if (playerBehaviour.selfTalkAudioSource != null && selfTalk2 != null)
         {
             playerBehaviour.selfTalkAudioSource.PlayOneShot(selfTalk2);
-            Debug.Log("Playing SelfTalk2 audio.");
             yield return new WaitForSeconds(selfTalk2.length);
             
-            // עדכון המשימה למשימה הבאה
             if (missionManager != null)
             {
                 missionManager.TriggerNextMission();
-                Debug.Log("Mission updated after SelfTalk2.");
             }
         }
 
