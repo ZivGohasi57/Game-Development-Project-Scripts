@@ -10,8 +10,7 @@ public class BarTenderBehaviour : MonoBehaviour
     public Animator animator;
     public AudioSource audioSource;
 
-    public float finalWaitTime = 30f; // זמן המתנה לנקודת הדרך האחרונה
-
+    public float finalWaitTime = 30f; 
     private int currentWaypointIndex = 0;
 
     void Start()
@@ -57,16 +56,13 @@ public class BarTenderBehaviour : MonoBehaviour
         State = 1; // Waiting state
         animator.SetInteger("State", State); // Update Animator state
 
-        // נגן את האודיו כשמגיע למצב 1
         if (audioSource != null && !audioSource.isPlaying)
         {
             audioSource.Play();
         }
 
-        // המתן לסיום האודיו
         yield return new WaitUntil(() => !audioSource.isPlaying);
 
-        // המתן לשנייה נוספת אחרי סיום האודיו
         yield return new WaitForSeconds(1f);
 
         State = 0; // Return to moving state
@@ -80,7 +76,7 @@ public class BarTenderBehaviour : MonoBehaviour
         State = 2; // Final waiting state
         animator.SetInteger("State", State); // Update Animator state
 
-        yield return new WaitForSeconds(finalWaitTime); // המתנה לפי הזמן שהוגדר לנקודת הסיום
+        yield return new WaitForSeconds(finalWaitTime);
 
         State = 0; // Return to moving state after final wait
         animator.SetInteger("State", State);
