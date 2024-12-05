@@ -15,6 +15,6 @@ public class ButtonEvents : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        // אפשרות להחזיר את הטקסט המקורי או לרוקן אותו
+     
     }
 }
