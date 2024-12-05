@@ -33,17 +33,16 @@ public class Enemy : MonoBehaviour
     private float targetHP;
     private float hitCooldown = 0.5f;
     private bool canBeHit = true;
-	public Door taskDoor; // דלת שנפתחת לאחר מותו של האויב
-    public bool isFinalBoss = false; // משתנה לסימון אם זה הבוס הסופי
-	public AudioClip chaseSound;  // הסאונד שישמיע בזמן רדיפה
+    public Door taskDoor;
+    public bool isFinalBoss = false;
+    public AudioClip chaseSound; 
     private AudioSource audioSource;
-	private bool isChasing = false;  // משתנה בוליאני לעקוב אחרי מצב רדיפה
-	public bool needToMakeMeTalk;  // משתנה בו��י��ני להפ��י�� את הרדי��ה
-	public Color normalColor = Color.green;   // צבע ברירת מחדל למעל 40% חיים
-    public Color lowHpColor = Color.yellow;   // צבע כתום בין 20% ל-40%
-    public Color criticalHpColor = Color.red; // צבע אדום מתחת ל-20%צבע אדום מתחת ל-
-    public TMP_Text hpText;  // Reference to TextMeshPro text component for HP
-
+    private bool isChasing = false; 
+    public bool needToMakeMeTalk;
+    public Color normalColor = Color.green;  
+    public Color lowHpColor = Color.yellow; 
+    public Color criticalHpColor = Color.red;
+    public TMP_Text hpText; 
 
 
 
@@ -52,27 +51,22 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
-		audioSource = GetComponent<AudioSource>();
+	audioSource = GetComponent<AudioSource>();
         
         if (audioSource != null && chaseSound != null)
         {
             audioSource.clip = chaseSound;
-            audioSource.loop = true;  // הסאונד יחזור על עצמו במהלך הרדיפה
+            audioSource.loop = true; 
         }
-        // יצירת מזהה ייחודי אם enemyId ריק
+     
         if (string.IsNullOrEmpty(enemyId))
         {
-            // אם יש מזהה שמור ב-PlayerPrefs, טען אותו
             enemyId = PlayerPrefs.GetString(gameObject.name + "_enemyId", Guid.NewGuid().ToString());
-            
-            // שמירת המזהה ב-PlayerPrefs לשימוש עתידי
             PlayerPrefs.SetString(gameObject.name + "_enemyId", enemyId);
         }
 
-        // בדוק אם האויב כבר מת לפי המזהה ב-PersistentObjectManager
         if (PersistentObjectManager.instance != null && PersistentObjectManager.instance.IsEnemyDead(enemyId))
         {
-            // השבתת האובייקט אם הוא מסומן כמת
             gameObject.SetActive(false);
             return;
         }
@@ -86,11 +80,10 @@ public class Enemy : MonoBehaviour
     {
         if (isDead) return;
 
-        // הפניית סרגל החיים לכיוון המצלמה
         if (enemyCanvas != null)
         {
             enemyCanvas.transform.LookAt(Camera.main.transform);
-            enemyCanvas.transform.Rotate(0, 180, 0);  // סיבוב של 180 מעלות כך שהקאנבס יפנה למצלמה
+            enemyCanvas.transform.Rotate(0, 180, 0); 
         }
 
         if (!door.isUnlocked) return;
@@ -100,7 +93,7 @@ public class Enemy : MonoBehaviour
         {
             if (distanceToPlayer > attackRange && !isAttacking)
             {
-				StartChase();
+		StartChase();
                 MoveTowardsPlayer();
             }
             else if (distanceToPlayer <= attackRange && canAttack)
@@ -122,7 +115,7 @@ public class Enemy : MonoBehaviour
             isChasing = true;
             if (audioSource != null && !audioSource.isPlaying)
             {
-                audioSource.Play();  // התחלת הסאונד של הרדיפה
+                audioSource.Play();
             }
         }
     }
@@ -134,7 +127,7 @@ public class Enemy : MonoBehaviour
             isChasing = false;
             if (audioSource != null && audioSource.isPlaying)
             {
-                audioSource.Stop();  // עצירת הסאונד כאשר מפסיק לרדוף
+                audioSource.Stop(); 
             }
         }
     }
@@ -168,16 +161,16 @@ public class Enemy : MonoBehaviour
         animator.SetInteger("punch", punch);
         animator.SetBool("isPunching", true);
     
-        yield return new WaitForSeconds(1f); // השהייה קצרה עד שהמכה מתחילה
+        yield return new WaitForSeconds(1f);
     
-        EnableAttackColliders(); // הפעלת הקוליידרים בזמן המכה
+        EnableAttackColliders();
     
-        yield return new WaitForSeconds(1f); // משך הזמן שהקוליידרים פועלים בזמן המכה
+        yield return new WaitForSeconds(1f); 
     
-        DisableAttackColliders(); // כיבוי הקוליידרים בסיום המכה
+        DisableAttackColliders();
         isAttacking = false;
-        animator.SetBool("isPunching", false); // חזרה למצב רגיל
-        yield return new WaitForSeconds(attackCooldown); // השהייה לפני שמכה נוספת אפשרית
+        animator.SetBool("isPunching", false); 
+        yield return new WaitForSeconds(attackCooldown); 
         canAttack = true;
     }
 
@@ -224,40 +217,36 @@ public class Enemy : MonoBehaviour
     {
         isDead = true;
 
-        // שמירת מצב האויב כמת ב-PersistentObjectManager
+     
         if (PersistentObjectManager.instance != null)
         {
             PersistentObjectManager.instance.SetEnemyDead(enemyId);
         }
 
-        // הפעלת אנימציית מוות
+       
         animator.SetTrigger("die");
 
-        // כיבוי הקאנבס של האויב
+       
         if (enemyCanvas != null)
         {
             enemyCanvas.enabled = false;
         }
 
-        // השבתת הקוליידר לאחר מוות
         hitCollider.enabled = false;
 
-		 if (taskDoor != null)
+	if (taskDoor != null)
         {
             taskDoor.taskCompleted = true;
             taskDoor.TryOpenDoor();
-            Debug.Log("האויב מת - פתיחת דלת המשימה.");
         }
 
-        // אם זה הבוס הסופי, נקדם משימה
         if (isFinalBoss && PersistentObjectManager.instance != null)
         {
             PersistentObjectManager.instance.AdvanceMission();
-            Debug.Log("הבוס הסופי מת - קידום המשימה.");
         }
 
     	StartCoroutine(GradualStopChase());
-		if (isFinalBoss && needToMakeMeTalk)
+	if (isFinalBoss && needToMakeMeTalk)
         {
             CavePlayerBehaviour player = FindObjectOfType<CavePlayerBehaviour>();
             if (player != null)
@@ -269,23 +258,21 @@ public class Enemy : MonoBehaviour
 
 	IEnumerator GradualStopChase()
     {
-        float delayTime = 2f; // הזמן שנרצה עד לעצירה מלאה
-        float initialVolume = audioSource.volume; // עוצמת המוזיקה הנוכחית
+        float delayTime = 2f;
+        float initialVolume = audioSource.volume;
     
         float elapsedTime = 0;
         while (elapsedTime < delayTime)
         {
             elapsedTime += Time.deltaTime;
-            // הנמכת המוזיקה בהדרגה
             audioSource.volume = Mathf.Lerp(initialVolume, 0, elapsedTime / delayTime);
             yield return null;
         }
     
-        // הבטחה שהמוזיקה נעלמת
         audioSource.volume = 0;
-        audioSource.Stop(); // עצירת המוזיקה באופן סופי
+        audioSource.Stop();
     
-        StopChase(); // עצירה סופית של המרדף
+        StopChase();
     }
     
 
@@ -328,7 +315,7 @@ public class Enemy : MonoBehaviour
 
         if (hpText != null)
         {
-            hpText.text = Mathf.RoundToInt(currentHP) + "/" + Mathf.RoundToInt(maxHP); // Display HP as text
+            hpText.text = Mathf.RoundToInt(currentHP) + "/" + Mathf.RoundToInt(maxHP);
         }
     }
     
@@ -347,7 +334,6 @@ public class Enemy : MonoBehaviour
             if (player != null)
             {
                 TakeDamage(player.attackDamage);
-                Debug.Log("האויב נפגע! חיים נוכחיים: " + targetHP);
             }
         }
     }
