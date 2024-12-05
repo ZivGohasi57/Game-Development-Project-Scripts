@@ -2,15 +2,14 @@ using UnityEngine;
 
 public class GoldPickup : MonoBehaviour
 {
-    public int goldAmount = 10;  // כמות הזהב שיינתן כשנאסף
+    public int goldAmount = 10; 
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))  // בדיקה אם השחקן התקרב לזהב
+        if (other.CompareTag("Player"))
         {
-            GoldManager.Instance.AddGold(goldAmount);  // הוספת הזהב לניהול הזהב
-            Debug.Log("אספת " + goldAmount + " זהב!");
-            gameObject.SetActive(false);  // הסרת הזהב מהמשחק
+            GoldManager.Instance.AddGold(goldAmount);  
+            gameObject.SetActive(false); 
         }
     }
 }
