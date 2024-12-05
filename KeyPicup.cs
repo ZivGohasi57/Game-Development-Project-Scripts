@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class KeyPickup : MonoBehaviour
 {
-    public Door linkedDoor;  // הדלת שהמפתח פותח
+    public Door linkedDoor;  
 
     private bool isInRange = false;
 
@@ -12,9 +12,8 @@ public class KeyPickup : MonoBehaviour
     {
         if (isInRange && Input.GetKeyDown(KeyCode.E))
         {
-            linkedDoor.hasKey = true;  // עדכון הדלת שהמפתח נאסף
-            Debug.Log("המפתח נאסף!");
-            Destroy(gameObject);  // השמדת המפתח לאחר איסופו
+            linkedDoor.hasKey = true; 
+            Destroy(gameObject);
         }
     }
 
