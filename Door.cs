@@ -3,58 +3,45 @@ using UnityEngine.UI;
 
 public class Door : MonoBehaviour
 {
-    public bool requiresKey = false;  // האם הדלת דורשת מפתח
-    public bool requiresTaskCompletion = false;  // האם הדלת דורשת משימה
-    public bool hasKey = false;  // האם יש מפתח (ניתן לשנות דרך Inspector)
-    public bool taskCompleted = false;  // האם המשימה הושלמה
+    public bool requiresKey = false; 
+    public bool requiresTaskCompletion = false; 
+    public bool hasKey = false;
+    public bool taskCompleted = false; 
 
-    public Text interactionText;  // טקסט שיוצג לשחקן
-
+    public Text interactionText;
     [Header("Messages")]
-    public string messageLocked = "Key require";  // הודעה אם הדלת נעולה
-    public string messageTaskIncomplete = "Task didnt complete";  // הודעה אם המשימה לא הושלמה
-    public string messagePressToOpen = "Press E to open";  // הודעה לפתיחה
+    public string messageLocked = "Key require"; 
+    public string messageTaskIncomplete = "Task didnt complete"; 
+    public string messagePressToOpen = "Press E to open"; 
 
-    public Animator doorAnimator;  // אנימטור לפתיחת הדלת
+    public Animator doorAnimator; 
 
-    // משתני סאונד
-    public AudioClip openDoorSound;    // סאונד לפתיחת הדלת
-    private AudioSource audioSource;    // מקור הסאונד
-
-    public bool isUnlocked = false;  // האם הדלת פתוחה
-    private bool isInRange = false;  // האם השחקן ליד הדלת
-    private string doorId;  // מזהה ייחודי לדלת
+    
+    public AudioClip openDoorSound;  
+    private AudioSource audioSource;   
+    public bool isUnlocked = false; 
+    private bool isInRange = false; 
+    private string doorId;
 
     void Start()
     {
         doorId = $"{gameObject.name}_{transform.position}";
 
-        // קבלת רכיב AudioSource
         audioSource = GetComponent<AudioSource>();
         
-        // בדיקה אם הדלת כבר נפתחה בעבר
         if (PersistentObjectManager.instance != null &&
             PersistentObjectManager.instance.IsDoorOpen(doorId))
         {
-            SetDoorOpenedState();  // השארת הדלת פתוחה
+            SetDoorOpenedState(); 
         }
 
         if (doorAnimator == null)
         {
             doorAnimator = GetComponent<Animator>();
-            if (doorAnimator == null)
-            {
-                Debug.LogError("Animator לא נמצא על הדלת: " + gameObject.name);
-            }
-        }
-
-        if (interactionText == null)
-        {
-            Debug.LogError("interactionText לא מחובר ב-Inspector לדלת: " + gameObject.name);
         }
         else
         {
-            interactionText.gameObject.SetActive(false);  // הסתרת הטקסט בהתחלה
+            interactionText.gameObject.SetActive(false);
         }
     }
 
@@ -80,7 +67,7 @@ public class Door : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isInRange = false;
-            interactionText.gameObject.SetActive(false);  // הסתרת הטקסט ביציאה
+            interactionText.gameObject.SetActive(false); 
         }
     }
 
@@ -96,8 +83,8 @@ public class Door : MonoBehaviour
         }
         else
         {
-            OpenDoor();  // פתיחת הדלת
-            PersistentObjectManager.instance?.SetDoorOpen(doorId);  // שמירת מצב פתוח
+            OpenDoor();
+            PersistentObjectManager.instance?.SetDoorOpen(doorId);
         }
     }
 
@@ -118,28 +105,24 @@ public class Door : MonoBehaviour
             interactionText.text = messagePressToOpen;
         }
 
-        interactionText.gameObject.SetActive(true);  // הצגת הטקסט
+        interactionText.gameObject.SetActive(true);
     }
 
     void OpenDoor()
     {
         isUnlocked = true;
-        interactionText.gameObject.SetActive(false);  // הסתרת הטקסט לאחר פתיחה
-        doorAnimator.SetBool("DoorOpens", true);  // הפעלת האנימציה
+        interactionText.gameObject.SetActive(false); 
+        doorAnimator.SetBool("DoorOpens", true);
 
-        // השמעת סאונד לפתיחת הדלת
         if (audioSource != null && openDoorSound != null)
         {
             audioSource.PlayOneShot(openDoorSound);
         }
-
-        Debug.Log("הדלת נפתחה: " + gameObject.name);
     }
 
     void SetDoorOpenedState()
     {
         isUnlocked = true;
-        doorAnimator.SetBool("DoorOpens", true);  // השארת הדלת פתוחה
-        Debug.Log("הדלת כבר פתוחה: " + gameObject.name);
+        doorAnimator.SetBool("DoorOpens", true); 
     }
 }
