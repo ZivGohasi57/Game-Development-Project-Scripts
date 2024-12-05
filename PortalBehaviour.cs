@@ -5,45 +5,39 @@ using UnityEngine.UI;
 
 public class PortalBehaviour : MonoBehaviour
 {
-    public string targetSceneName;  // The name of the scene to load
-    public Image fadeImage;  // התמונה שתשמש לפייד
-    public float fadeDuration = 1f;  // משך הזמן של הפייד
+    public string targetSceneName; 
+    public Image fadeImage;
+    public float fadeDuration = 1f; 
 
     private void Start()
     {
-        // ודא שהפייד שקוף בהתחלה
         Color color = fadeImage.color;
-        color.a = 0;  // שקיפות מלאה
+        color.a = 0; 
         fadeImage.color = color;
-        fadeImage.gameObject.SetActive(true);  // ודא שהאובייקט פעיל
+        fadeImage.gameObject.SetActive(true); 
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))  // רק אם השחקן נכנס
+        if (other.CompareTag("Player")) 
         {
-            PersistentObjectManager.instance.GetLastScene();  // Save the current scene before changing
-            SceneManager.LoadScene(targetSceneName);  // Load the target scene
-            // קידום המשימה כאשר נכנסים לפורטל
+            PersistentObjectManager.instance.GetLastScene();
+            SceneManager.LoadScene(targetSceneName); 
             MissionManager missionManager = FindObjectOfType<MissionManager>();
 
             if (missionManager != null)
             {
                 missionManager.TriggerNextMission();
-                Debug.Log("Mission advanced after passing through the portal.");
             }
 
-            // התחלת מעבר הסצנה עם אפקט הפייד
             StartCoroutine(TransitionToScene());
         }
     }
 
     private IEnumerator TransitionToScene()
     {
-        // פייד אוט - הכנס את התמונה
-        yield return Fade(1);  // פייד ל-1 (שחור)
+        yield return Fade(1); 
 
-        // טען את הסצנה המתאימה
         if (SceneManager.GetActiveScene().buildIndex == 0)
         {
             SceneManager.LoadScene(1);
@@ -53,8 +47,7 @@ public class PortalBehaviour : MonoBehaviour
             SceneManager.LoadScene(0);
         }
 
-        // פייד אין - הוצא את התמונה
-        yield return Fade(0);  // פייד ל-0 (שקוף)
+        yield return Fade(0);
     }
 
     private IEnumerator Fade(float targetAlpha)
@@ -69,10 +62,9 @@ public class PortalBehaviour : MonoBehaviour
             Color color = fadeImage.color;
             color.a = alpha;
             fadeImage.color = color;
-            yield return null;  // המתן עד לפריים הבא
+            yield return null; 
         }
 
-        // ודא שהאלפא הוא בדיוק מה שרצינו בסוף
         Color finalColor = fadeImage.color;
         finalColor.a = targetAlpha;
         fadeImage.color = finalColor;
