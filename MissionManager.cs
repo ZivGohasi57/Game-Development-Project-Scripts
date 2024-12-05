@@ -35,9 +35,9 @@ public class MissionManager : MonoBehaviour
             "Search for the treasure notes 3 of 4.",
             "Find the well around the lake and follow its path.",
             "Find weapons (The Blue Way!)",
-			"You must fight the enemy's to get the clue about the tressure from the big boss (The Red Way!)",
+	    "You must fight the enemy's to get the clue about the tressure from the big boss (The Red Way!)",
             "Get the Key and fight againts the big boss",
-			"Get out from the cave",
+	    "Get out from the cave",
             "Go To the forbiedden forest and use you new skill to break into it"
         };
 
@@ -57,7 +57,6 @@ public class MissionManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Mission is currently locked. Cannot update mission with delay.");
         }
     }
 
@@ -75,14 +74,6 @@ public class MissionManager : MonoBehaviour
             LockMission();
             currentMissionIndex = missionIndex;
             UpdateMission(missions[currentMissionIndex]);
-        }
-        else if (IsMissionLocked)
-        {
-            Debug.LogWarning("Mission is currently locked. Cannot update mission by index.");
-        }
-        else
-        {
-            Debug.LogWarning("Invalid mission index.");
         }
     }
 
@@ -146,51 +137,30 @@ public class MissionManager : MonoBehaviour
         return currentMissionIndex;
     }
 
-    // New method to trigger mission update after sword is picked up
     public void TriggerNextMissionOnSwordPickup()
     {
         if (!IsMissionLocked && PersistentObjectManager.instance.hasSwordInHand)
         {
-            TriggerNextMission();  // Advance mission
-        }
-        else
-        {
-            Debug.LogWarning("Sword not in hand, mission will not advance.");
+            TriggerNextMission(); 
         }
     }
 
-    // Existing method to trigger the next mission
     public void TriggerNextMission()
     {
         if (!IsMissionLocked && currentMissionIndex + 1 < missions.Count)
         {
             currentMissionIndex++;
             UpdateMissionByIndex(currentMissionIndex);
-            Debug.Log($"Mission updated to: {missions[currentMissionIndex]}");
-        }
-        else
-        {
-            Debug.LogWarning("Mission cannot be updated. Either it's locked or it's the last mission.");
         }
     }
 
 
-    // פונקציה להתקדמות במשימות
     public void AdvanceMission()
     {
-		Debug.Log("here 1");
         if (currentMissionIndex < missions.Count - 1)
         {
-			Debug.Log("here 2");
             currentMissionIndex++;
-            Debug.Log("משימה התקדמה: " + missions[currentMissionIndex]);
-            UpdateMission(missions[currentMissionIndex]); // עדכן את ה-UI או כל מה שצריך במשחק שלך
-        }
-        else
-        {
-            Debug.Log("כל המשימות הושלמו!");
+            UpdateMission(missions[currentMissionIndex]);
         }
     }
-
-    
 }
