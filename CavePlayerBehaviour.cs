@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement; // לשימוש במעבר בין סצנות
+using UnityEngine.SceneManagement;
 
 
 public class CavePlayerBehaviour : MonoBehaviour
@@ -18,18 +18,18 @@ public class CavePlayerBehaviour : MonoBehaviour
     public AudioClip footStepsClip;
     public AudioSource footStepsAudioSource;
 
-    public LayerMask enemyLayer;  // שכבת האויבים
-    public List<Collider> attackColliders; // רשימה של קוליידרים עבור התקפות שונות
-    public float attackDamage = 0; // כמות הנזק שהשחקן נותן
+    public LayerMask enemyLayer;
+    public List<Collider> attackColliders;
+    public float attackDamage = 0; 
 
     CharacterController controller;
     float speed = 10f;
     float runSpeed = 20f;
-    float combatWalkSpeed = 5f; // מהירות הליכה במצב קרב
+    float combatWalkSpeed = 5f; 
     public float mouseSensitivity = 5f;
     public float verticalClampAngle = 45f;
 
-    private bool isInCombatMode = false;  // מצב הקרב
+    private bool isInCombatMode = false;
     private int clickCount = 0;
     private float lastClickTime = 0;
     private float timeBetweenClicks = 0.3f;
@@ -39,18 +39,18 @@ public class CavePlayerBehaviour : MonoBehaviour
     private float currentPitch = 0f;
     private Vector3 cameraVelocity = Vector3.zero;
 
-    private GameObject currentJar;  // לשמירת הכד בטווח
-    private GameObject currentEnemy;  // לשמירת האויב בטווח
-    public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
-    public float currentHP;          // כמות ה-HP הנוכחית של השחקן
-    public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן
+    private GameObject currentJar;  
+    private GameObject currentEnemy; 
+    public float maxHP = 100f;      
+    public float currentHP;          
+    public Slider hpSlider;        
 
-    public int weaponType; // סוג הנשק, 0 - נשק רגיל, 1 - חרב
-    public float damage;  // משתנה לכמות הנזק
-    public Image fadeImage;  // Image עבור אפקט fade
+    public int weaponType; 
+    public float damage;  
+    public Image fadeImage; 
     public float fadeDuration = 1f;
 
-    private string currentSceneName = "CaveScene";     // שם הסצנה הנוכחית
+    private string currentSceneName = "CaveScene";   
 
     public Image topEdge;
     public Image bottomEdge;
@@ -62,17 +62,17 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     public enum WeaponType { None = -1, Fists = 0, Sword = 1 }
 
-    public WeaponType currentWeapon = WeaponType.None; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
-    public bool hasFists = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
-    public bool hasSword = false; // שדה הפך ל-public כדי לאפשר גישה מבחוץ
+    public WeaponType currentWeapon = WeaponType.None;
+    public bool hasFists = false; 
+    public bool hasSword = false;
     public bool isAttacking = false;
 	public AudioClip voiceSword;
 	public AudioClip voiceForest;
 	public AudioSource audioSource;
-	public Color normalColor = Color.green;   // צבע ברירת מחדל למעל 40% חיים
-    public Color lowHpColor = Color.yellow;   // צבע כתום בין 20% ל-40%
-    public Color criticalHpColor = Color.red; // צבע אדום מתחת ל-20%צבע אדום מתחת ל-
-    private Coroutine healthRegenCoroutine;    // משתנה לשמירה על ה-coroutine של חידוש החיים
+	public Color normalColor = Color.green; 
+    public Color lowHpColor = Color.yellow; 
+    public Color criticalHpColor = Color.red; 
+    private Coroutine healthRegenCoroutine; 
 
 
 	
@@ -95,19 +95,17 @@ public class CavePlayerBehaviour : MonoBehaviour
         SwitchWeapon(currentWeapon);	
         if (currentWeapon == WeaponType.Sword && hasSword)
         {
-            sword_in_hand.SetActive(true);  // הצגת החרב ביד השחקן
+            sword_in_hand.SetActive(true); 
         }
         else
         {
-            sword_in_hand.SetActive(false); // כיבוי תצוגת החרב אם היא לא הנשק הנבחר
+            sword_in_hand.SetActive(false); 
         }
 
 
         if (footStepsAudioSource == null)
-            Debug.LogError("AudioSource(s) are not assigned!");
 
         if (animator == null)
-            Debug.LogError("Animator is not assigned!");
 
         if (footStepsAudioSource != null && footStepsClip != null)
             footStepsAudioSource.clip = footStepsClip;
@@ -117,17 +115,16 @@ public class CavePlayerBehaviour : MonoBehaviour
         pickText.gameObject.SetActive(false);
         openChestText.gameObject.SetActive(false);
 
-        // טען את מצב החרב
         if (PersistentObjectManager.instance != null)
         {
             sword_in_hand.SetActive(PersistentObjectManager.instance.hasSwordInHand);
             sword.SetActive(PersistentObjectManager.instance.hasSwordOnWall);
-            animator.SetInteger("WeaponType", PersistentObjectManager.instance.weaponType); // טען את סוג הנשק
+            animator.SetInteger("WeaponType", PersistentObjectManager.instance.weaponType);
 			
         }
-        DisableAllAttackColliders(); // לוודא שכל הקוליידרים כבויים בהתחלה
-		currentHP = maxHP;           // מתחילים עם כמות החיים המקסימלית
-        UpdateHPUI();                // עדכון ה-UI בתחילת המשחק
+        DisableAllAttackColliders();
+		currentHP = maxHP;    
+        UpdateHPUI();    
     }
     
 
@@ -178,7 +175,7 @@ public class CavePlayerBehaviour : MonoBehaviour
         {
             ExitCombatMode();
         }
-        if (isInCombatMode && (weaponType == 1 || weaponType == 0)) // לחימה עם חרב או נשק רגיל
+        if (isInCombatMode && (weaponType == 1 || weaponType == 0)) 
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -206,7 +203,7 @@ public class CavePlayerBehaviour : MonoBehaviour
             }
         }
 
-        // עדכון PersistentObjectManager בסיום הפעולה
+      
         if (PersistentObjectManager.instance != null)
         {
             PersistentObjectManager.instance.SetWeaponType(animator.GetInteger("WeaponType"));
@@ -228,70 +225,67 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     void ExecuteSingleAttack()
     {
-        isAttacking = true; // לנעילת התנועה
-        Debug.Log("Single Attack");
+        isAttacking = true;
         animator.SetTrigger("SingleAttack");
-        StartCoroutine(AttackAnimationLock(1f)); // מנעילת תנועה עד לסיום האנימציה
-        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
+        StartCoroutine(AttackAnimationLock(1f));
+        StartCoroutine(ActivateAttackColliders());
 		
 		if (currentJar != null) 
 		{ 
-            Jar jarScript = currentJar.GetComponent<Jar>(); // בדיקה אם יש חבית בטווח
+            Jar jarScript = currentJar.GetComponent<Jar>();
             if (jarScript != null)
             {
-                jarScript.Break(); // קריאה לפונקציית השבירה של החבית
+                jarScript.Break();
             }
 		}
 
-        // נבדוק אם יש אויב בטווח
+        
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
+            AttackEnemy(currentEnemy, attackDamage); 
         }
     }
 
     void ExecuteComboAttack()
     {
-        isAttacking = true; // לנעילת התנועה
-        Debug.Log("Combo Attack");
+        isAttacking = true;
         animator.SetTrigger("ComboAttack");
         StartCoroutine(AttackAnimationLock(1f));
-        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
+        StartCoroutine(ActivateAttackColliders());
 		if (currentJar != null) 
 		{ 
-			Jar jarScript = currentJar.GetComponent<Jar>(); // בדיקה אם יש חבית בטווח
+			Jar jarScript = currentJar.GetComponent<Jar>();
             if (jarScript != null)
             {
-                jarScript.Break(); // קריאה לפונקציית השבירה של החבית
+                jarScript.Break(); 
             }
 		}
 
-        // נבדוק אם יש אויב בטווח
+        
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
+            AttackEnemy(currentEnemy, attackDamage);
         }
     }
     
     IEnumerator AttackAnimationLock(float extraWaitTime)
     {
-        // המתן עד שהאנימציה של ההתקפה תסתיים
         yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length + extraWaitTime);
-        isAttacking = false; // שחרור הנעילה
+        isAttacking = false;
     }
 
     IEnumerator ActivateAttackColliders()
     {
-        EnableAllAttackColliders(); // הפעלת כל הקוליידרים
-        yield return new WaitForSeconds(0.5f); // זמן המכה
-        DisableAllAttackColliders(); // כיבוי הקוליידרים לאחר המכה
+        EnableAllAttackColliders();
+        yield return new WaitForSeconds(0.5f);
+        DisableAllAttackColliders();
     }
 
     void EnableAllAttackColliders()
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = true; // הפעלת כל הקוליידרים
+            collider.enabled = true;
         }
     }
 
@@ -299,26 +293,23 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = false; // כיבוי כל הקוליידרים
+            collider.enabled = false; 
         }
     }
 
     void AttackEnemy(GameObject enemy, float damage)
     {
-        // נניח שהאויב שלך משתמש בסקריפט שנקרא 'Enemy' ויש לו פונקציה 'TakeDamage'
+
         Enemy enemyScript = enemy.GetComponent<Enemy>();
         if (enemyScript != null)
         {
-            enemyScript.TakeDamage(damage);  // לדוגמה, הורדת 20 נקודות חיים
-            Debug.Log("פגעת באויב!");
+            enemyScript.TakeDamage(damage);
         }
     }
 
     void HandleMovement()
     {
         float currentSpeed;
-
-        // קביעת מהירות לפי מצב הקרב
         if (isInCombatMode)
         {
             currentSpeed = combatWalkSpeed;
@@ -351,8 +342,6 @@ public class CavePlayerBehaviour : MonoBehaviour
 
                 footStepsAudioSource.pitch = (currentSpeed == runSpeed) ? 2f : (isInCombatMode ? 0.75f : 1f);
 
-
-                // הפעל את סאונד הצעדים אם הוא לא כבר מתנגן
                 if (!footStepsAudioSource.isPlaying)
                 {
                     footStepsAudioSource.Play();
@@ -361,7 +350,6 @@ public class CavePlayerBehaviour : MonoBehaviour
             else
             {
                 UpdateAnimation(0, false);
-                // עצור את הסאונד אם השחקן לא זז
                 if (footStepsAudioSource.isPlaying)
                 {
                     footStepsAudioSource.Stop();
@@ -430,10 +418,10 @@ public class CavePlayerBehaviour : MonoBehaviour
 		PersistentObjectManager.instance.SetHasSword(true);
 		SwitchWeapon(WeaponType.Sword);
 
-        int newWeaponType = 1; // עדכון סוג הנשק
+        int newWeaponType = 1; 
         animator.SetInteger("WeaponType", newWeaponType);
 
-        // עדכון PersistentObjectManager
+
         if (PersistentObjectManager.instance != null)
         {
             PersistentObjectManager.instance.SetWeaponType(newWeaponType);
@@ -441,44 +429,40 @@ public class CavePlayerBehaviour : MonoBehaviour
 
         pickText.gameObject.SetActive(false);
 
-        // הוספת הקריאה ל-MissionManager להתקדמות המשימה
+      
         MissionManager missionManager = FindObjectOfType<MissionManager>();
         if (missionManager != null)
         {
             missionManager.AdvanceMission();
-            Debug.Log("המשימה התקדמה לאחר איסוף החרב!");
         }
-		VoiceSwordTalk();
+        VoiceSwordTalk();
     }
     
     void HandleWeaponChange()
     {
         if (Input.GetKeyDown(KeyCode.Alpha0))
         {
-            // לחצן 0: אי אפשר להילחם
+          
             PersistentObjectManager.instance.SetWeaponType(-1);
             animator.SetInteger("WeaponType", -1);
-            Debug.Log("WeaponType set to -1, combat disabled.");
         }
         else if (Input.GetKeyDown(KeyCode.Alpha1) && PersistentObjectManager.instance.hasWeaponInHand)
         {
-            // לחצן 1: נשק רגיל
+            
             PersistentObjectManager.instance.SetWeaponType(0);
             animator.SetInteger("WeaponType", 0);
-            Debug.Log("WeaponType set to 0, regular weapon equipped.");
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2) && PersistentObjectManager.instance.hasSwordInHand)
         {
-            // לחצן 2: חרב
+         
             PersistentObjectManager.instance.SetWeaponType(1);
             animator.SetInteger("WeaponType", 1);
-            Debug.Log("WeaponType set to 1, sword equipped.");
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))  // נניח שלכל האויבים יש תגית "Enemy"
+        if (other.CompareTag("Enemy"))
         {
             currentEnemy = other.gameObject;
         }
@@ -486,13 +470,12 @@ public class CavePlayerBehaviour : MonoBehaviour
         {
             currentJar = other.gameObject;
         }
-        else if (other.CompareTag("EnemyAttack"))  // בדוק אם הפגיעה באה מהאויב
+        else if (other.CompareTag("EnemyAttack"))  
         {
             Enemy enemy = other.GetComponentInParent<Enemy>();
             if (enemy != null)
             {
-                TakeDamage(enemy.attackDamage);  // השחקן מקבל נזק מהאויב בהתאם לכמות הנזק של האויב
-                Debug.Log("השחקן נפגע! חיים נוכחיים: " + currentHP);
+                TakeDamage(enemy.attackDamage); 
             }
         }
     }
@@ -501,7 +484,7 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            currentEnemy = null;  // האויב יצא מהטווח
+            currentEnemy = null; 
         }
         else if (other.CompareTag("Jar"))
         {
@@ -511,38 +494,28 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        Debug.Log($"נגרם נזק: {damage}, חיים נוכחיים: {currentHP}");  // הצגת נזק וחיים נוכחיים
     
-        currentHP -= damage;  // הפחתת כמות החיים בהתאם לנזק
+        currentHP -= damage;
         if (currentHP < 0)
         {
             currentHP = 0;
         }
     
-        // עדכון ה-HP של השחקן ב-PersistentObjectManager
         PersistentObjectManager.instance.SetPlayerHP(currentHP);
 
-        // עדכון ה-UI
         UpdateHPUI(); 
-		UpdateEdgeEffect();
+	UpdateEdgeEffect();
 
-        // בדוק אם החיים הגיעו ל-0
+      
         if (currentHP == 0)
         {
-            Debug.Log("החיים של השחקן הגיעו ל-0, קריאה לפונקציית Die()");
-            Die();  // קריאה לפונקציית המוות
+            Die();
         }
     }
 
     void Die()
     {
-        Debug.Log("הדמות מתה!");
-
-        // הפעלת אנימציית מוות
-        animator.SetTrigger("Die"); // שינוי המשתנה הבוליאני ל-true
-        Debug.Log("האנימציה של המוות הופעלה");
-
-        // קריאה לפונקציה שממתינה לסיום האנימציה ואז טוענת את מסך המוות עם אפקט fade
+        animator.SetTrigger("Die");
         StartCoroutine(WaitForDeathAnimation());
     }
 
@@ -571,29 +544,24 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     IEnumerator WaitForDeathAnimation()
     {
-        // זמן השהיה למשך זמן האנימציה (בהתאם לאורך האנימציה)
         float deathAnimationTime = animator.GetCurrentAnimatorStateInfo(0).length;
-        
-        // ממתין עד לסיום האנימציה
         yield return new WaitForSeconds(deathAnimationTime);
 
-        // הפעלת אפקט fade
         yield return StartCoroutine(FadeOut(fadeDuration));
 
-        // מעבר לסצנת מסך המוות
         SceneManager.LoadScene("DeathScreen");
     }
 
     IEnumerator FadeOut(float duration)
     {
         float currentTime = 0f;
-        Color fadeColor = fadeImage.color;  // קבלת צבע ה-Image
+        Color fadeColor = fadeImage.color;
 
         while (currentTime < duration)
         {
             currentTime += Time.deltaTime;
-            fadeColor.a = Mathf.Lerp(0, 1, currentTime / duration);  // העלאת השקיפות בהדרגה
-            fadeImage.color = fadeColor;  // עדכון צבע ה-Image
+            fadeColor.a = Mathf.Lerp(0, 1, currentTime / duration);
+            fadeImage.color = fadeColor;
             yield return null;
         }
     }
@@ -604,12 +572,12 @@ public class CavePlayerBehaviour : MonoBehaviour
 	IEnumerator BlinkEdgeEffect()
         {
         isBlinking = true;
-        float blinkDuration = 0.5f;  // משך כל מעבר
+        float blinkDuration = 0.5f; 
         float minAlpha = 0f;
         float maxAlpha = maxEdgeAlpha;
-        bool increasing = true;  // עוקב אחר כיוון השקיפות
+        bool increasing = true;
     
-        while (currentHP <= lowHpThreshold)  // ממשיך להבהב כל עוד ה-HP מתחת לסף
+        while (currentHP <= lowHpThreshold) 
         {
             float startAlpha = increasing ? minAlpha : maxAlpha;
             float endAlpha = increasing ? maxAlpha : minAlpha;
@@ -623,10 +591,10 @@ public class CavePlayerBehaviour : MonoBehaviour
                 yield return null;
             }
     
-            increasing = !increasing;  // הפוך את הכיוון
+            increasing = !increasing;
         }
     
-        SetEdgeEffect(0f);  // לאפס את האפקט כאשר יוצאים מהלולאה
+        SetEdgeEffect(0f); 
         isBlinking = false;
 	}
 
@@ -641,7 +609,6 @@ public class CavePlayerBehaviour : MonoBehaviour
         }
         else
         {
-            // כאשר ה-HP גבוה יותר מהסף, כבה את האפקט
             StopCoroutine(BlinkEdgeEffect());
             SetEdgeEffect(0f);
         }
@@ -667,37 +634,28 @@ public class CavePlayerBehaviour : MonoBehaviour
 
     public void AddHealth(float healthToAdd)
     {
-        // חיבור החיים החדשים לערך הנוכחי עד לתקרה של maxHP
         currentHP = Mathf.Min(currentHP + healthToAdd, maxHP);
         
-        // עדכון ה-HP של השחקן ב-PersistentObjectManager
         PersistentObjectManager.instance.SetPlayerHP(currentHP);
     
-        // עדכון התצוגה על ה-UI
         UpdateHPUI();
     }
 
 	public void AddWeapon(string weaponName)
     {
-        if (weaponName == "Fists" && !hasFists && !hasSword) // Adding fists only if no sword or fists are added
+        if (weaponName == "Fists" && !hasFists && !hasSword)
         {
             hasFists = true;
-            Debug.Log("נוסף נשק: אגרופים");
             SwitchWeapon(WeaponType.Fists);
             animator.SetInteger("WeaponType", (int)currentWeapon);
 			PersistentObjectManager.instance.SetHasFists(true);
         }
-        else if (weaponName == "Sword" && hasFists && !hasSword) // Adding sword only if fists are already there and sword is not
+        else if (weaponName == "Sword" && hasFists && !hasSword) /
         {
             hasSword = true;
-            Debug.Log("נוסף נשק: חרב");
             SwitchWeapon(WeaponType.Sword);
             animator.SetInteger("WeaponType", (int)currentWeapon);
-			PersistentObjectManager.instance.SetHasSword(true);
-        }
-        else
-        {
-            Debug.Log($"נשק {weaponName} אינו זמין להוספה.");
+            PersistentObjectManager.instance.SetHasSword(true);
         }
     }
 
@@ -722,22 +680,17 @@ public class CavePlayerBehaviour : MonoBehaviour
             PersistentObjectManager.instance.SetWeaponType((int)weaponType);
         }
     
-        // אם הנשק הנוכחי הוא חרב, הצג את החרב ביד השחקן
         if (currentWeapon == WeaponType.Sword)
         {
-            sword_in_hand.SetActive(true);  // הצגת החרב ביד
-			attackDamage = 70f;
-            Debug.Log("חרב ביד השחקן.");
+            sword_in_hand.SetActive(true);
+	    attackDamage = 70f;
         }
         else
         {
-            sword_in_hand.SetActive(false);  // הסתרת החרב מהיד
-			attackDamage = 20f;
-            Debug.Log("חרב הוסרה מהיד.");
+            sword_in_hand.SetActive(false); 
+	    attackDamage = 20f;
         }
-    
-        Debug.Log($"Picked weapon {currentWeapon} damage {attackDamage}");
-    }
+     }
    
 
 	void VoiceSwordTalk()
@@ -760,9 +713,9 @@ public class CavePlayerBehaviour : MonoBehaviour
     {
         while (currentHP < maxHP * 0.3f && !isInCombatMode)
         {
-            currentHP = Mathf.Min(currentHP + 1, maxHP * 0.3f);  // הוספה של 1 HP עד לתקרה של 30%
-            UpdateHPUI();  // עדכון UI
-            yield return new WaitForSeconds(2f);  // השהייה של 2 שניות לפני תוספת הבאה
+            currentHP = Mathf.Min(currentHP + 1, maxHP * 0.3f);
+            UpdateHPUI();
+            yield return new WaitForSeconds(2f);
         }
     }
 }
