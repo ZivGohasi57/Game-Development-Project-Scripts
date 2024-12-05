@@ -3,28 +3,27 @@ using UnityEngine;
 
 public class Jar : MonoBehaviour
 {
-    public GameObject brokenJar;  // חבית שבורה שתופעל לאחר השבירה
-    public GameObject hiddenItem;  // האובייקט הנסתר (מפתח/זהב)
-    public string jarId;  // מזהה ייחודי לחבית
+    public GameObject brokenJar;  
+    public GameObject hiddenItem; 
+    public string jarId; 
 
-    private bool isBroken = false;  // מניעת שבירה כפולה
-
+    private bool isBroken = false;
     private void Start()
     {
         jarId = $"{gameObject.name}_{transform.position}";
 
-        // בדיקה אם החבית כבר נשברה בעבר
+      
         if (PersistentObjectManager.instance != null &&
             PersistentObjectManager.instance.IsContainerOpen(jarId))
         {
-            ActivateBrokenJar();  // הפעלת החבית השבורה עם האובייקט הנסתר
+            ActivateBrokenJar(); 
         }
         else
         {
-            brokenJar.SetActive(false);  // הסתרת החבית השבורה בהתחלה
+            brokenJar.SetActive(false);
             if (hiddenItem != null)
             {
-                hiddenItem.SetActive(false);  // הסתרת הפריט הנסתר
+                hiddenItem.SetActive(false);
             }
         }
     }
@@ -34,49 +33,37 @@ public class Jar : MonoBehaviour
         if (!isBroken)
         {
             isBroken = true;
-            Debug.Log("Jar is breaking...");  // דיבאג - שבירת החבית
-            StartCoroutine(BreakAfterDelay(0.8f));  // השהיה לפני השבירה
+            Debug.Log("Jar is breaking...");
+            StartCoroutine(BreakAfterDelay(0.8f)); 
         }
     }
 
     private IEnumerator BreakAfterDelay(float delay)
     {
-        yield return new WaitForSeconds(delay);  // השהיה
+        yield return new WaitForSeconds(delay); 
 
         if (hiddenItem != null)
         {
-            hiddenItem.SetActive(true);  // הפעלת הפריט הנסתר
-            Debug.Log($"Activating {hiddenItem.name}...");  // דיבאג
-        }
-        else
-        {
-            Debug.LogError("No hidden item assigned to the jar!");
+            hiddenItem.SetActive(true);
         }
 
-        PersistentObjectManager.instance?.SetContainerOpen(jarId);  // שמירת מצב החבית כשבורה
-        ActivateBrokenJar();  // הפעלת החבית השבורה
+        PersistentObjectManager.instance?.SetContainerOpen(jarId); 
+        ActivateBrokenJar(); 
     }
 
     private void ActivateBrokenJar()
     {
         if (brokenJar != null)
         {
-            brokenJar.SetActive(true);  // הפעלת החבית השבורה
-            Debug.Log("Broken jar activated.");  // דיבאג
+            brokenJar.SetActive(true); 
 
-            // קבלת רכיב AudioSource מההורה
             AudioSource parentAudioSource = transform.parent.GetComponent<AudioSource>();
             if (parentAudioSource != null)
             {
-                // השמעת הסאונד של השבר
-                parentAudioSource.PlayOneShot(parentAudioSource.clip); // או כאן תשים את הקליפ המתאים
-            }
-            else
-            {
-                Debug.LogError("No AudioSource found on the parent object!"); // דיבאג
+                parentAudioSource.PlayOneShot(parentAudioSource.clip); 
             }
         }
 
-        gameObject.SetActive(false);  // הסתרת החבית השלמה
+        gameObject.SetActive(false);
     }
 }
