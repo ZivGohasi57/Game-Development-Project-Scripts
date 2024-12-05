@@ -37,103 +37,81 @@ public class PlayerBehaviour : MonoBehaviour
     private bool interactionCompleted = false;
     public bool HasChangedClothes = false;
     public int documentsCollected = 0;
-    public GameObject sword_in_hand; // חרב ביד השחקן
+    public GameObject sword_in_hand;
 
-    private bool isInCombatMode = false; // מצב הקרב
+    private bool isInCombatMode = false; 
     private int clickCount = 0;
     private float lastClickTime = 0;
     private float timeBetweenClicks = 0.3f;
 
     public bool InteractionCompleted { get { return interactionCompleted; } }
 
-    public enum WeaponType { None = -1, Fists = 0, Sword = 1 } // הוספת enum לסוגי הנשקים
+    public enum WeaponType { None = -1, Fists = 0, Sword = 1 } 
     public WeaponType currentWeapon = WeaponType.None;
     public bool hasFists = false; 
     public bool hasSword = false; 
-	public Image topEdge;
+    public Image topEdge;
     public Image bottomEdge;
     public Image leftEdge;
     public Image rightEdge;
-	public float lowHpThreshold = 40f;
+    public float lowHpThreshold = 40f;
     public float maxEdgeAlpha = 0.5f;
     private bool isBlinking = false;
-	private GameObject currentEnemy;  // לשמירת האויב בטווח
-    public float maxHP = 100f;       // כמות ה-HP המקסימלית של השחקן
-    public float currentHP;          // כמות ה-HP הנוכחית של השחקן
-    public Slider hpSlider;          // סליידר המייצג את כמות ה-HP של השחקן
-	public LayerMask enemyLayer;  // שכבת האויבים
-    public List<Collider> attackColliders; // רשימה של קוליידרים עבור התקפות שונות
-	public float attackDamage = 0; // כמות הנזק שהשחקן נותן
-	public float fadeDuration = 1f;
-    public Image fadeImage;  // Image עבור אפקט fade
-	public bool isAttacking = false;
-	float combatWalkSpeed = 5f; // מהירות הליכה במצב קרב
-	public AudioSource backAudioSource; // מקור השמע שברצונך להנמיך
+    private GameObject currentEnemy; 
+    public float maxHP = 100f;      
+    public float currentHP;      
+    public Slider hpSlider;     
+    public LayerMask enemyLayer; 
+    public List<Collider> attackColliders;
+    public float attackDamage = 0; 
+    public float fadeDuration = 1f;
+    public Image fadeImage; 
+    public bool isAttacking = false;
+    float combatWalkSpeed = 5f;
+    public AudioSource backAudioSource; 
 
 
   
-  void Start()
+    void Start()
     {
-		int savedWeaponType = PersistentObjectManager.instance.weaponType;
+	int savedWeaponType = PersistentObjectManager.instance.weaponType;
         currentWeapon = (WeaponType)savedWeaponType;
         animator.SetInteger("WeaponType", savedWeaponType);
-		SwitchWeapon(currentWeapon);	
-		if (currentWeapon == WeaponType.Sword && hasSword)
+	SwitchWeapon(currentWeapon);	
+	if (currentWeapon == WeaponType.Sword && hasSword)
         {
-            sword_in_hand.SetActive(true);  // הצגת החרב ביד השחקן
+            sword_in_hand.SetActive(true);  
         }
         else
         {
-            sword_in_hand.SetActive(false); // כיבוי תצוגת החרב אם היא לא הנשק הנבחר
+            sword_in_hand.SetActive(false); 
         }
 
         controller = GetComponent<CharacterController>();
-
-        if (footStepsAudioSource == null || selfTalkAudioSource == null)
-        {
-            Debug.LogError("AudioSource(s) are not assigned!");
-        }
-
-        if (animator == null)
-        {
-            Debug.LogError("Animator is not assigned!");
-        }
-
         if (footStepsAudioSource != null && footStepsClip != null)
         {
             footStepsAudioSource.clip = footStepsClip;
         }
 
         cameraOffset = playerCamera.transform.position - cameraTarget.position;
-
-        // הירשם לאירוע טעינת סצנה
         SceneManager.sceneLoaded += OnSceneLoaded;
-
-        // עדכון מצב החרב לפי מנהל המצב
         sword_in_hand.SetActive(PersistentObjectManager.instance.hasSwordInHand);
-		
-		hasFists = PersistentObjectManager.instance.hasFists;
+	hasFists = PersistentObjectManager.instance.hasFists;
         hasSword = PersistentObjectManager.instance.hasSword;
     }
 
     void OnDestroy()
     {
-        // בטל את הרישום לאירוע כאשר האובייקט מושמד
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // אירוע שיתרחש בכל פעם שסצנה נטענת
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // טען את weaponType מ-PersistentObjectManager
         if (PersistentObjectManager.instance != null)
         {
             int weaponType = PersistentObjectManager.instance.weaponType;
 
-            // עדכן את האנימטור עם סוג הנשק
             animator.SetInteger("WeaponType", weaponType);
-
-            Debug.Log($"Loaded weaponType: {weaponType} from PersistentObjectManager");
         }
     }
 
@@ -142,7 +120,7 @@ public class PlayerBehaviour : MonoBehaviour
         HandleMovement();
         CheckInteractionComplete();
         HandleCombat();
-        HandleWeaponSwitch(); // פונקציה לניהול הלחצנים 1 ו-2
+        HandleWeaponSwitch(); 
     }
 
     void LateUpdate()
@@ -174,7 +152,7 @@ public class PlayerBehaviour : MonoBehaviour
 
     void HandleMovement()
     { 
-    	if (isAttacking) return; // חסימת תנועה אם הדמות במצב התקפה
+    	if (isAttacking) return;
 
         float currentSpeed = isInCombatMode ? combatWalkSpeed : (Input.GetKey(KeyCode.LeftShift) ? runSpeed : speed);
         float horizontal = Input.GetAxis("Horizontal");
@@ -189,7 +167,7 @@ public class PlayerBehaviour : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10);
     
             Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
-            moveDirection.y = -1f; // משיכה קלה למטה כדי להיצמד לקרקע
+            moveDirection.y = -1f; 
     
             controller.Move(moveDirection * currentSpeed * Time.deltaTime);
     
@@ -211,25 +189,24 @@ public class PlayerBehaviour : MonoBehaviour
 
     void PlayFootSteps(float dx, float dz, float currentSpeed)
     {
-        if (!(Mathf.Abs(dx) < 0.01f && Mathf.Abs(dz) < 0.01f)) // אם השחקן בתנועה
+        if (!(Mathf.Abs(dx) < 0.01f && Mathf.Abs(dz) < 0.01f)) 
         {
             if (!footStepsAudioSource.isPlaying)
             {
                 footStepsAudioSource.Play();
             }
     
-            // התאמת מהירות הסאונד לסוג ההליכה
             if (isInCombatMode)
             {
-                footStepsAudioSource.pitch = 0.75f; // מהירות סאונד נמוכה להליכה קרבית
+                footStepsAudioSource.pitch = 0.75f;
             }
             else if (currentSpeed == runSpeed)
             {
-                footStepsAudioSource.pitch = 1.5f; // מהירות סאונד גבוהה לריצה
+                footStepsAudioSource.pitch = 1.5f; 
             }
             else
             {
-                footStepsAudioSource.pitch = 1.0f; // מהירות סאונד רגילה להליכה
+                footStepsAudioSource.pitch = 1.0f; 
             }
         }
         else
@@ -331,7 +308,6 @@ public class PlayerBehaviour : MonoBehaviour
         {
             int weaponType = PersistentObjectManager.instance.weaponType;
     
-            // וידוא של השחקן נמצא במצב לחימה
             if (Input.GetMouseButton(1))
             {
                 EnterCombatMode();
@@ -341,7 +317,6 @@ public class PlayerBehaviour : MonoBehaviour
                 ExitCombatMode();
             }
     
-            // ביצוע תקיפה רק אם השחקן במצב קרב ויש לו נשק מתאים
             if (isInCombatMode && (currentWeapon == WeaponType.Fists || currentWeapon == WeaponType.Sword))
             {
                 if (Input.GetMouseButtonDown(0))
@@ -386,47 +361,40 @@ public class PlayerBehaviour : MonoBehaviour
 
     void ExecuteSingleAttack()
     {
-        isAttacking = true; // לנעילת התנועה
-    	Debug.Log("Single Attack");
+        isAttacking = true; 
     	animator.SetTrigger("SingleAttack");
-    	StartCoroutine(AttackAnimationLock(1f)); // מנעילת תנועה עד לסיום האנימציה
-        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
+    	StartCoroutine(AttackAnimationLock(1f)); 
+        StartCoroutine(ActivateAttackColliders()); 
 		
-        // נבדוק אם יש אויב בטווח
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
+            AttackEnemy(currentEnemy, attackDamage); 
         }
     }
 
     void ExecuteComboAttack()
     {
-        isAttacking = true; // לנעילת התנועה
-        Debug.Log("Combo Attack");
+        isAttacking = true; 
         animator.SetTrigger("ComboAttack");
         StartCoroutine(AttackAnimationLock(1f));
-        StartCoroutine(ActivateAttackColliders()); // הפעלת כל הקוליידרים לזמן קצר כדי לפגוע באויב
-		
-
-        // נבדוק אם יש אויב בטווח
+        StartCoroutine(ActivateAttackColliders()); 
         if (currentEnemy != null)
         {
-            AttackEnemy(currentEnemy, attackDamage); // כאן השימוש בנזק שמתעדכן ב-SwitchWeapon
+            AttackEnemy(currentEnemy, attackDamage); 
         }
     }
 
-	IEnumerator AttackAnimationLock(float extraWaitTime)
+    IEnumerator AttackAnimationLock(float extraWaitTime)
     {
-        // המתן עד שהאנימציה של ההתקפה תסתיים
         yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length + extraWaitTime);
-        isAttacking = false; // שחרור הנעילה
+        isAttacking = false; 
     }
 
-	IEnumerator ActivateAttackColliders()
+    IEnumerator ActivateAttackColliders()
     {
-        EnableAllAttackColliders(); // הפעלת כל הקוליידרים
-        yield return new WaitForSeconds(0.5f); // זמן המכה
-        DisableAllAttackColliders(); // כיבוי הקוליידרים לאחר המכה
+        EnableAllAttackColliders(); 
+        yield return new WaitForSeconds(0.5f); 
+        DisableAllAttackColliders();
         isAttacking = false;
     }
 
@@ -434,7 +402,7 @@ public class PlayerBehaviour : MonoBehaviour
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = true; // הפעלת כל הקוליידרים
+            collider.enabled = true;
         }
     }
 
@@ -442,22 +410,20 @@ public class PlayerBehaviour : MonoBehaviour
     {
         foreach (var collider in attackColliders)
         {
-            collider.enabled = false; // כיבוי כל הקוליידרים
+            collider.enabled = false;
         }
     }
 
-	void AttackEnemy(GameObject enemy, float damage)
+    void AttackEnemy(GameObject enemy, float damage)
     {
-        // נניח שהאויב שלך משתמש בסקריפט שנקרא 'Enemy' ויש לו פונקציה 'TakeDamage'
         Enemy enemyScript = enemy.GetComponent<Enemy>();
         if (enemyScript != null)
         {
-            enemyScript.TakeDamage(damage);  // לדוגמה, הורדת 20 נקודות חיים
-            Debug.Log("פגעת באויב!");
+            enemyScript.TakeDamage(damage); 
         }
     }
 
-    void HandleWeaponSwitch() // פונקציה לניהול מעבר נשקים עם לחצנים 1 ו-2
+    void HandleWeaponSwitch() 
     {
         if (Input.GetKeyDown(KeyCode.Alpha1) && hasFists)
         {
@@ -477,7 +443,6 @@ public class PlayerBehaviour : MonoBehaviour
         {
             PersistentObjectManager.instance.SetWeaponType((int)weaponType);
         }
-        // הצגת החרב ביד רק אם בחרנו בחרב
         if (currentWeapon == WeaponType.Sword)
         {
             sword_in_hand.SetActive(true);
@@ -486,27 +451,19 @@ public class PlayerBehaviour : MonoBehaviour
         {
             sword_in_hand.SetActive(false);
         }
-
-        Debug.Log($"החלפת נשק ל-{currentWeapon}");
     }
 
-	void Die()
+    void Die()
     {
-        Debug.Log("הדמות מתה!");
-
-        // הפעלת אנימציית מוות
-        animator.SetTrigger("Die"); // שינוי המשתנה הבוליאני ל-true
-        Debug.Log("האנימציה של המוות הופעלה");
-
-        // קריאה לפונקציה שממתינה לסיום האנימציה ואז טוענת את מסך המוות עם אפקט fade
+        animator.SetTrigger("Die"); 
         StartCoroutine(WaitForDeathAnimation());
     }
 
-	void UpdateHPUI()
+    void UpdateHPUI()
     {
         if (hpSlider != null)
         {
-            hpSlider.value = currentHP / maxHP;  // עדכון ערך הסליידר ב-UI
+            hpSlider.value = currentHP / maxHP;
         }
     }
 
@@ -514,32 +471,27 @@ public class PlayerBehaviour : MonoBehaviour
 
     IEnumerator WaitForDeathAnimation()
     {
-        // זמן השהיה למשך זמן האנימציה (בהתאם לאורך האנימציה)
         float deathAnimationTime = animator.GetCurrentAnimatorStateInfo(0).length;
         
-        // ממתין עד לסיום האנימציה
         yield return new WaitForSeconds(deathAnimationTime);
 
-        // הפעלת אפקט fade
         yield return StartCoroutine(FadeOut(fadeDuration));
 
-        // מעבר לסצנת מסך המוות
         SceneManager.LoadScene("DeathScreen");
     }
 
-	private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))  // נניח שלכל האויבים יש תגית "Enemy"
+        if (other.CompareTag("Enemy")) 
         {
             currentEnemy = other.gameObject;
         }
-        else if (other.CompareTag("EnemyAttack"))  // בדוק אם הפגיעה באה מהאויב
+        else if (other.CompareTag("EnemyAttack"))  
         {
             Enemy enemy = other.GetComponentInParent<Enemy>();
             if (enemy != null)
             {
-                TakeDamage(enemy.attackDamage);  // השחקן מקבל נזק מהאויב בהתאם לכמות הנזק של האויב
-                Debug.Log("השחקן נפגע! חיים נוכחיים: " + currentHP);
+                TakeDamage(enemy.attackDamage); 
             }
         }
     }
@@ -548,80 +500,73 @@ public class PlayerBehaviour : MonoBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            currentEnemy = null;  // האויב יצא מהטווח
+            currentEnemy = null; 
         }
         
     }
 	
-	IEnumerator FadeOut(float duration)
+    IEnumerator FadeOut(float duration)
     {
         float currentTime = 0f;
-        Color fadeColor = fadeImage.color;  // קבלת צבע ה-Image
+        Color fadeColor = fadeImage.color; 
 
         while (currentTime < duration)
         {
             currentTime += Time.deltaTime;
-            fadeColor.a = Mathf.Lerp(0, 1, currentTime / duration);  // העלאת השקיפות בהדרגה
-            fadeImage.color = fadeColor;  // עדכון צבע ה-Image
+            fadeColor.a = Mathf.Lerp(0, 1, currentTime / duration);  
+            fadeImage.color = fadeColor;  
             yield return null;
         }
     }
 
     public void TakeDamage(float damage)
     {
-        Debug.Log($"נגרם נזק: {damage}, חיים נוכחיים: {currentHP}");  // הצגת נזק וחיים נוכחיים
-    
-        currentHP -= damage;  // הפחתת כמות החיים בהתאם לנזק
+        currentHP -= damage; 
         if (currentHP < 0)
         {
             currentHP = 0;
         }
     
-        // עדכון ה-HP של השחקן ב-PersistentObjectManager
         PersistentObjectManager.instance.SetPlayerHP(currentHP);
 
-        // עדכון ה-UI
         UpdateHPUI(); 
-		UpdateEdgeEffect();
+	UpdateEdgeEffect();
 
-        // בדוק אם החיים הגיעו ל-0
         if (currentHP == 0)
         {
-            Debug.Log("החיים של השחקן הגיעו ל-0, קריאה לפונקציית Die()");
-            Die();  // קריאה לפונקציית המוות
+            Die(); 
         }
-    }
+     }
 	
 	IEnumerator BlinkEdgeEffect()
         {
-        isBlinking = true;
-        float blinkDuration = 0.5f;  // משך כל מעבר
-        float minAlpha = 0f;
-        float maxAlpha = maxEdgeAlpha;
-        bool increasing = true;  // עוקב אחר כיוון השקיפות
+        	isBlinking = true;
+        	float blinkDuration = 0.5f; 
+       		float minAlpha = 0f;
+        	float maxAlpha = maxEdgeAlpha;
+        	bool increasing = true; 
     
-        while (currentHP <= lowHpThreshold)  // ממשיך להבהב כל עוד ה-HP מתחת לסף
-        {
-            float startAlpha = increasing ? minAlpha : maxAlpha;
-            float endAlpha = increasing ? maxAlpha : minAlpha;
-            float elapsedTime = 0f;
+        	while (currentHP <= lowHpThreshold) 
+        	{
+            		float startAlpha = increasing ? minAlpha : maxAlpha;
+            		float endAlpha = increasing ? maxAlpha : minAlpha;
+            		float elapsedTime = 0f;
     
-            while (elapsedTime < blinkDuration)
-            {
-                float alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / blinkDuration);
-                SetEdgeEffect(alpha);
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
+            		while (elapsedTime < blinkDuration)
+            		{
+             		   	float alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / blinkDuration);
+                		SetEdgeEffect(alpha);
+                		elapsedTime += Time.deltaTime;
+                		yield return null;
+            		}
+           	 	increasing = !increasing; 
+        	}
     
-            increasing = !increasing;  // הפוך את הכיוון
-        }
-    
-        SetEdgeEffect(0f);  // לאפס את האפקט כאשר יוצאים מהלולאה
-        isBlinking = false;
+        	SetEdgeEffect(0f); 
+        	isBlinking = false;
 	}
 
-	void UpdateEdgeEffect()
+    void UpdateEdgeEffect()
     {
         if (currentHP <= lowHpThreshold)
         {
@@ -632,7 +577,6 @@ public class PlayerBehaviour : MonoBehaviour
         }
         else
         {
-            // כאשר ה-HP גבוה יותר מהסף, כבה את האפקט
             StopCoroutine(BlinkEdgeEffect());
             SetEdgeEffect(0f);
         }
@@ -656,30 +600,27 @@ public class PlayerBehaviour : MonoBehaviour
         }
     }
 
-	public void StartTransitionToCredits()
+    public void StartTransitionToCredits()
     {
         StartCoroutine(TransitionToCredits());
     }
 
     private IEnumerator TransitionToCredits()
     {
-        Debug.Log("Starting transition to credits"); // בדיקה שהמעבר מתחיל
         
         if (fadeImage != null)
         {
-            fadeImage.color = new Color(0, 0, 0, 0); // התחל משקיפות מלאה
-            fadeImage.gameObject.SetActive(true); // ודא שהתמונה פעילה
+            fadeImage.color = new Color(0, 0, 0, 0);
+            fadeImage.gameObject.SetActive(true);
 
-            float fadeDuration = 4f; // זמן הפייד
-            float initialVolume = backAudioSource != null ? backAudioSource.volume : 0f; // עוצמת הקול ההתחלתית
+            float fadeDuration = 4f;
+            float initialVolume = backAudioSource != null ? backAudioSource.volume : 0f; 
 
             for (float t = 0; t < fadeDuration; t += Time.deltaTime)
             {
-                // עדכון הפייד
                 float alpha = Mathf.Clamp01(t / fadeDuration);
                 fadeImage.color = new Color(0, 0, 0, alpha);
 
-                // הנמכת עוצמת הקול
                 if (backAudioSource != null) 
                 {
                     backAudioSource.volume = Mathf.Lerp(initialVolume, 0, t / fadeDuration);
@@ -688,13 +629,12 @@ public class PlayerBehaviour : MonoBehaviour
                 yield return null;
             }
 
-            // ודא שהפייד שחור מלא ועוצמת הקול אפסית
             fadeImage.color = new Color(0, 0, 0, 1f);
             if (backAudioSource != null) backAudioSource.volume = 0f;
         }
 
-        yield return new WaitForSeconds(1f); // המתנה קצרה לאחר הפייד
-        SceneManager.LoadScene("Credits"); // החלף לשם הסצנה שלך
+        yield return new WaitForSeconds(1f); 
+        SceneManager.LoadScene("Credits"); 
     }
 
 }
