@@ -5,7 +5,7 @@ using UnityEngine;
 public class GateController : MonoBehaviour
 {
     public GameObject player;
-    public GameObject gateCollider; // הקוליידר של השער
+    public GameObject gateCollider;
     public bool canPassThrough = false; 
     public bool hasTalkedToNPC = false; 
     public AudioClip selfTalk3;
@@ -25,24 +25,16 @@ public class GateController : MonoBehaviour
         }
 
         missionManager = FindObjectOfType<MissionManager>();
-
-        if (playerBehaviour == null || missionManager == null)
-        {
-            Debug.LogError("PlayerBehaviour or MissionManager not found!");
-        }
     }
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            // בדוק אם שני התנאים מתקיימים
             if (canPassThrough && hasTalkedToNPC)
             {
                 missionManager.TriggerNextMission();
-                Debug.Log("Player met the conditions. Mission updated to the next one.");
                 
-                // הסתר את הקוליידר
                 if (gateCollider != null)
                 {
                     gateCollider.SetActive(false);
@@ -52,12 +44,10 @@ public class GateController : MonoBehaviour
             {
                 if (!hasTalkedToNPC)
                 {
-                    Debug.Log("Player needs to talk to the NPC first.");
                     PlaySelfTalk3();
                 }
                 else if (!canPassThrough)
                 {
-                    Debug.Log("Player needs to change clothes before passing.");
                     PlaySelfTalk4();
                 }
                 messageDisplayed = true;
@@ -73,17 +63,14 @@ public class GateController : MonoBehaviour
         }
     }
 
-    // פונקציה להגדיר האם השחקן יכול לעבור דרך השער
     public void SetCanPassThrough(bool value)
     {
         canPassThrough = value;
-        Debug.Log($"canPassThrough updated to: {canPassThrough}");
     }
 
     public void SetHasTalkedToNPC(bool value)
     {
         hasTalkedToNPC = value;
-        Debug.Log($"hasTalkedToNPC updated to: {hasTalkedToNPC}");
     }
 
     void PlaySelfTalk3()
@@ -100,10 +87,5 @@ public class GateController : MonoBehaviour
         {
             selfTalkAudioSource.PlayOneShot(selfTalk4);
         }
-    }
-
-    void DebugState()
-    {
-        Debug.Log($"CanPassThrough: {canPassThrough}, HasTalkedToNPC: {hasTalkedToNPC}");
     }
 }
