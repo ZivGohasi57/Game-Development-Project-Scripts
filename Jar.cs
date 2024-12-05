@@ -13,8 +13,7 @@ public class Jar : MonoBehaviour
         jarId = $"{gameObject.name}_{transform.position}";
 
       
-        if (PersistentObjectManager.instance != null &&
-            PersistentObjectManager.instance.IsContainerOpen(jarId))
+        if (PersistentObjectManager.instance != null && PersistentObjectManager.instance.IsContainerOpen(jarId))
         {
             ActivateBrokenJar(); 
         }
