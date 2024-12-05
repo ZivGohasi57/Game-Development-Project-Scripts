@@ -25,8 +25,8 @@ public class Key : MonoBehaviour
 
     public int goldAmount = 10;
     public int lifeBoostAmount = 30;
-    public bool isBigTreasure = false; // האם זה "האוצר הגדול"
-    public Image fadeImage; // תמונת הפייד
+    public bool isBigTreasure = false; 
+    public Image fadeImage; 
 
     public Animator chestAnimator;
     public Animator playerAnimator;
@@ -157,9 +157,7 @@ public class Key : MonoBehaviour
             case ItemType.Key:
                 if (linkedDoor != null)
                 {
-                    linkedDoor.hasKey = true;
-                    Debug.Log("המפתח נאסף! הדלת עודכנה.");
-    
+                    linkedDoor.hasKey = true;    
                     if (audioSource != null && takeKeySound != null)
                     {
                         audioSource.PlayOneShot(takeKeySound);
@@ -173,7 +171,7 @@ public class Key : MonoBehaviour
 
                 if (isBigTreasure)
                 {
-					PlayerBehaviour player1 = FindObjectOfType<PlayerBehaviour>();
+		    PlayerBehaviour player1 = FindObjectOfType<PlayerBehaviour>();
                     if (player1 != null)
                     {
                         player1.StartTransitionToCredits();
@@ -186,7 +184,6 @@ public class Key : MonoBehaviour
                 break;
     
             case ItemType.Weapon:
-                Debug.Log($"נשק {weaponType} נאסף!");
 
                 CavePlayerBehaviour player = FindObjectOfType<CavePlayerBehaviour>();
                 if (player != null)
@@ -212,13 +209,13 @@ public class Key : MonoBehaviour
                     audioSource.PlayOneShot(takeLifeSound);
                 }
                 break;
+		
         }
 
         interactionText.gameObject.SetActive(false);
         gameObject.SetActive(false);  
         PersistentObjectManager.instance?.CollectItem(generatedItemId);
-        Debug.Log($"הפריט {generatedItemId} נוסף לרשימת הפריטים שנאספו.");
-    }
+}
 
     
 
